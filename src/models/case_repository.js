@@ -6,11 +6,14 @@ import logger from '../logger';
  * This takes in a google sheet and converts it into an SKU object
  */
 export default class CaseRepository {
+  /* This class is for containing all of the cases and providing search functions for it. */
   constructor(cases) {
     this.cases = cases;
   }
 
-  /* private function */
+  /*
+   * Returns a promise that will contain a caseRepository instance or throw an error
+   */
   static createFromSheet(sheet, skuRepo) {
     const getCaseRows = Promise.promisify(sheet.getRows, { context: sheet });
 

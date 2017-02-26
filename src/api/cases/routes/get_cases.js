@@ -65,7 +65,7 @@ export default () => ({
         return reply({
           statusCode: 500,
           error: 'Internal Configuration Error',
-          message: e.message
+          message: e.message ? e.message : e
         });
       });
   }
