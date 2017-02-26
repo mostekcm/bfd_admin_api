@@ -1,0 +1,7 @@
+.env
+dist
+node_modules
+lib
+BFDServiceAccount.json
+.nyc_output
+coverage
