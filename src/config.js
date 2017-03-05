@@ -16,7 +16,7 @@ nconf
   .env()
   .file('BFD_SERVICE_ACCOUNT', configFile)
   .defaults({
-    PORT: 3001,
+    PORT: 3002,
     NODE_ENV: 'dev',
     BFD_LOG_LEVEL: 'info'
   });

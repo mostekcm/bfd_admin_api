@@ -39,7 +39,8 @@ class SkuRepository {
               toFill: row.timetofill
             },
             msrp: row.msrp,
-            upc: row.upc
+            upc: row.upc,
+            size: row.size
           };
         });
 

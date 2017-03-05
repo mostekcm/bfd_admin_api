@@ -5,8 +5,8 @@ import Promise from 'bluebird';
 import config from '../../../config';
 import logger from '../../../logger';
 
-import SkuRepository from '../../../models/sku_repository';
-import CaseRepository from '../../../models/case_repository';
+import SkuRepository from '../../../models/SkuRepository';
+import CaseRepository from '../../../models/CaseRepository';
 
 export default () => ({
   method: 'GET',
