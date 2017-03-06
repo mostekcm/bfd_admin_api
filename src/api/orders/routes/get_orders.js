@@ -1,9 +1,7 @@
-// import _ from 'lodash';
+import _ from 'lodash';
 import Joi from 'joi';
-// import GoogleSpreadsheet from 'google-spreadsheet';
-// import Promise from 'bluebird';
-// import config from '../../../config';
-// import logger from '../../../logger';
+import logger from '../../../logger';
+import OrderService from '../../../service/OrderService';
 
 export default () => ({
   method: 'GET',
@@ -23,13 +21,22 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    reply([
-      {
-        orderId: '1234ABCD'
-      },
-      {
-        orderId: '1235ABCD'
-      }
-    ]);
+    const orderService = new OrderService();
+    orderService.getAll()
+      .then(orders => reply(_.values(orders)))
+      .catch((e) => {
+        if (e.message) {
+          logger.error('Error trying to get orders data: ', e.message);
+          logger.error(e.stack);
+        } else {
+          logger.error(e);
+        }
+
+        return reply({
+          statusCode: 500,
+          error: 'Internal Configuration Error',
+          message: e.message ? e.message : e
+        });
+      });
   }
 });

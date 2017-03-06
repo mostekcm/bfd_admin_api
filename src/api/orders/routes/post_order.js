@@ -1,9 +1,7 @@
-// import _ from 'lodash';
+import Boom from 'boom';
 import orderSchema from '../schemas/order';
-// import GoogleSpreadsheet from 'google-spreadsheet';
-// import Promise from 'bluebird';
-// import config from '../../../config';
 import logger from '../../../logger';
+import OrderService from '../../../service/OrderService';
 
 export default () => ({
   method: 'POST',
@@ -20,8 +18,15 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
+    const service = new OrderService();
     const order = req.payload;
-    logger.info('Carlos order: ', JSON.stringify(order));
-    reply(order);
+    logger.info('adding new order: ', JSON.stringify(order));
+    service.addOrder(order)
+      .then(orderId => reply(orderId))
+      .catch((e) => {
+        logger.error(e.message);
+        logger.error(e.stackTrace);
+        return reply(Boom.wrap(e));
+      });
   }
 });

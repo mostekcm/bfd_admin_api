@@ -14,14 +14,15 @@ const sku = Joi.object().keys({
     .required()
 });
 
-const listItem = Joi.object().keys({
+const lineItem = Joi.object().keys({
   sku: sku.required(),
   description: Joi.string().max(500).allow(''),
   cpu: Joi.number().required(),
   size: Joi.number(),
-  quantity: Joi.number().min(1).max(100000)
+  quantity: Joi.number().min(1).max(100000).allow(''),
+  testers: Joi.number().min(0).max(100000).allow('')
 });
 
 export default Joi.object().keys({
-  listItems: Joi.array().items(listItem).required()
+  lineItems: Joi.array().items(lineItem).required()
 });

@@ -11,6 +11,10 @@ export default class CaseRepository {
     this.cases = cases;
   }
 
+  static createFromService() {
+
+  }
+
   /*
    * Returns a promise that will contain a caseRepository instance or throw an error
    */
