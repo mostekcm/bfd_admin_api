@@ -22,7 +22,7 @@ export default class CaseService {
     const me = this;
     if (this.caseRepo != null) return new Promise(resolve => resolve(this.caseRepo.getAll()));
 
-    return this.useServiceAccountAuth(config('BFD_SERVICE_ACCOUNT_CREDS'))
+    return this.useServiceAccountAuth(JSON.parse(config('BFD_SERVICE_ACCOUNT_CREDS')))
       .then(() => me.getInfo())
       .then((info) => {
         logger.debug('Loaded doc!');
