@@ -26,7 +26,7 @@ server.connection({
 });
 
 server.register([jwt, corsPlugin, auth, routes], (err) => {
-  console.log("Carlos, origins", config('BFD_CORS_ORIGINS'));
+  logger.info("Carlos, origins", config('BFD_CORS_ORIGINS'));
   if (err) {
     logger.error(err);
   }
