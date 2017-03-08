@@ -26,7 +26,7 @@ export default class OrderService {
     if (this.authenticated) return new Promise(resolve => resolve());
 
     const me = this;
-    console.debug("Carlos looking for service account creds: ", Object.keys(config('BFD_SERVICE_ACCOUNT_CREDS')).length);
+    logger.debug("Carlos looking for service account creds: ", Object.keys(config('BFD_SERVICE_ACCOUNT_CREDS')).length);
 
     return this.useServiceAccountAuth(config('BFD_SERVICE_ACCOUNT_CREDS'))
       .then(() => {
