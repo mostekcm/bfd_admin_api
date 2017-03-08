@@ -21,6 +21,7 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
+    console.debug("Carlos you are in get orders");
     const orderService = new OrderService();
     orderService.getAll()
       .then(orders => reply(_.values(orders)))
