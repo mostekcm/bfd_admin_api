@@ -66,6 +66,11 @@ export default class OrderService {
         ));
   }
 
+  getOrder(id) {
+    return this.getOrderRepo()
+      .then(repo => repo.get(id));
+  }
+
   getAll() {
     return this.getOrderRepo()
       .then(repo => repo.getAll());
