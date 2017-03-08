@@ -1,12 +1,33 @@
 import Promise from 'bluebird';
+import Boom from 'boom';
 
 /**
  * This takes in a google sheet and converts it into an SKU object
  */
 export default class OrderRepository {
   /* This class is for containing all of the cases and providing search functions for it. */
-  constructor(orders) {
+  constructor(orders, sheets) {
     this.orders = orders;
+    this.sheets = sheets;
+  }
+
+  /**
+   * Remove an order from the repository.  Assume that it has already been deleted from the workbook
+   * @param orderId
+   */
+  deleteOrder(orderId) {
+    if (this.orders[orderId]) {
+      const sheet = this.sheets[orderId];
+      const deleteSheet = Promise.promisify(sheet.del, { context: sheet });
+      return deleteSheet()
+        .then(() => {
+          delete this.sheets[orderId];
+          delete this.orders[orderId];
+          return orderId;
+        });
+    }
+
+    return new Promise((resolve, reject) => reject(Boom.notFound()));
   }
 
   /**
@@ -38,7 +59,7 @@ export default class OrderRepository {
           }
         });
         return Promise.all(rowPromises)
-          .then(() => order.id);
+          .then(() => order);
       });
   }
 
@@ -68,11 +89,16 @@ export default class OrderRepository {
      * Loop through all of the sheets in the workbook
      */
     const orders = {};
+    const sheetIndex = {};
     const sheetPromises = [];
     sheets.forEach((sheet) => {
       const getRows = Promise.promisify(sheet.getRows, { context: sheet });
-      const order = { id: sheet.title, lineItems: [] };
+      const order = {
+        id: sheet.title,
+        lineItems: []
+      };
       orders[sheet.title] = order;
+      sheetIndex[sheet.title] = sheet;
       sheetPromises.push(
         getRows({
           offset: 1,
@@ -86,7 +112,7 @@ export default class OrderRepository {
     });
 
     return Promise.all(sheetPromises)
-      .then(() => new OrderRepository(orders));
+      .then(() => new OrderRepository(orders, sheetIndex));
   }
 
   /**

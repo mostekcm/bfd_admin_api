@@ -16,6 +16,7 @@ export default class OrderService {
     this.useServiceAccountAuth = Promise.promisify(this.doc.useServiceAccountAuth, { context: this.doc });
     this.getInfoFromDoc = Promise.promisify(this.doc.getInfo, { context: this.doc });
     this.addWorksheetToDoc = Promise.promisify(this.doc.addWorksheet, { context: this.doc });
+    this.removeWorksheetFromDoc = Promise.promisify(this.doc.removeWorksheet, { context: this.doc });
     this.orderRepo = null;
     this.info = null;
     this.authenticated = false;
@@ -61,9 +62,14 @@ export default class OrderService {
       .then(() => me.addWorksheetToDoc({
         title: order.id
       })
-        .then(sheet => this.getOrderRepo()
+        .then(sheet => me.getOrderRepo()
           .then(repo => repo.addOrderToSheet(order, sheet))
         ));
+  }
+
+  deleteOrder(orderId) {
+    return this.getOrderRepo()
+      .then(repo => repo.deleteOrder(orderId));
   }
 
   getOrder(id) {

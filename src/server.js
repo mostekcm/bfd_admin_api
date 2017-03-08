@@ -10,6 +10,7 @@ import auth from './auth';
 const corsPlugin = {
   register: cors,
   options: {
+    methods: ['POST, GET, OPTIONS, DELETE, PUT'],
     origins: JSON.parse(config('BFD_CORS_ORIGINS'))
   }
 };
@@ -40,6 +41,7 @@ server.register([jwt, corsPlugin, auth, routes], (err) => {
         },
         handler: (request, reply) => {
           // This is the user object
+          // TODO: Is this leaking the token?
           reply(request.auth.credentials);
         }
       }

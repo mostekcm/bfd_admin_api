@@ -1,11 +1,11 @@
 import Boom from 'boom';
-import orderSchema from '../schemas/order';
+import Joi from 'joi';
 import logger from '../../../logger';
 import OrderService from '../../../service/OrderService';
 
 export default () => ({
-  method: 'POST',
-  path: '/api/orders/',
+  method: 'DELETE',
+  path: '/api/orders/{id}',
   config: {
     auth: {
       strategies: ['jwt'],
@@ -14,15 +14,16 @@ export default () => ({
     description: 'Get all orders in the system.',
     tags: ['api'],
     validate: {
-      payload: orderSchema
+      params: {
+        id: Joi.string().guid().required()
+      }
     }
   },
   handler: (req, reply) => {
     const service = new OrderService();
-    const order = req.payload;
-    logger.info('adding new order: ', JSON.stringify(order));
-    service.addOrder(order)
-      .then(newOrder => reply(newOrder))
+    logger.warn('deleting order: ', req.params.id);
+    service.deleteOrder(req.params.id)
+      .then(() => reply({ id: req.params.id }))
       .catch((e) => {
         logger.error(e.message);
         logger.error(e.stackTrace);
