@@ -41,7 +41,25 @@ export default class OrderRepository {
     this.orders[order.id] = order;
     const setHeaderRow = Promise.promisify(sheet.setHeaderRow, { context: sheet });
     const addRow = Promise.promisify(sheet.addRow, { context: sheet });
-    const columnHeaders = ['lineitemskuproductname', 'lineitemskuvariety', 'lineitemskusize', 'lineitemsize', 'lineitemcpu', 'lineitemquantity', 'lineitemtesters'];
+    const columnHeaders = [
+      'lineitemskuproductname',
+      'lineitemskuvariety',
+      'lineitemskusize',
+      'lineitemsize',
+      'lineitemcpu',
+      'lineitemquantity',
+      'lineitemtesters',
+      'date',
+      'storename',
+      'storeshippingaddress',
+      'storebillingaddress',
+      'storephone',
+      'storeemail',
+      'storecontact',
+      'salesrepname',
+      'showname',
+      'notes'
+    ];
 
     return setHeaderRow(columnHeaders)
       .then(() => {
@@ -142,8 +160,7 @@ export default class OrderRepository {
                 firstRow = false;
               }
               order.lineItems.push(OrderRepository.getListItemFromRow(row));
-            }
-          ))
+            }))
       );
     });
 
