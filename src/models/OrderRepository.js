@@ -1,5 +1,6 @@
 import Promise from 'bluebird';
 import Boom from 'boom';
+import moment from 'moment';
 
 /**
  * This takes in a google sheet and converts it into an SKU object
@@ -47,7 +48,7 @@ export default class OrderRepository {
         const rowPromises = [];
         order.lineItems.forEach((lineItem) => {
           if (lineItem.quantity && lineItem.quantity > 0) {
-            rowPromises.push(addRow({
+            const lineItemRow = {
               lineitemskuproductname: lineItem.sku.product.name,
               lineitemskusize: lineItem.sku.size,
               lineitemskuvariety: lineItem.sku.variety,
@@ -55,7 +56,21 @@ export default class OrderRepository {
               lineitemcpu: lineItem.cpu,
               lineitemquantity: lineItem.quantity,
               lineitemtesters: lineItem.testers
-            }));
+            };
+            const firstRow = rowPromises.length > 0 ? false :
+              Object.assign(lineItemRow, {
+                date: order.date || moment().unix(),
+                storename: order.store.name,
+                storeshippingaddress: order.store.shippingaddress,
+                storebillingaddress: order.store.billingaddress,
+                storephone: order.store.phone,
+                storeemail: order.store.email,
+                storecontact: order.store.contact,
+                notes: order.notes,
+                salesrepname: order.salesRep.name,
+                showname: order.show.name
+              });
+            rowPromises.push(addRow(firstRow || lineItemRow));
           }
         });
         return Promise.all(rowPromises)
@@ -99,6 +114,7 @@ export default class OrderRepository {
       };
       orders[sheet.title] = order;
       sheetIndex[sheet.title] = sheet;
+      let firstRow = true;
       sheetPromises.push(
         getRows({
           offset: 1,
@@ -106,8 +122,28 @@ export default class OrderRepository {
         })
           .then(rows =>
             /* Just list items for now, add them to the order */
-            rows.forEach(row => order.lineItems.push(OrderRepository.getListItemFromRow(row))
-            ))
+            rows.forEach((row) => {
+              if (firstRow) {
+                order.store = {
+                  name: row.storename,
+                  shippingAddress: row.storeshippingaddress,
+                  billingAddress: row.storebillingaddress,
+                  phone: row.storephone,
+                  email: row.storeemail,
+                  contact: row.storecontact
+                };
+                order.notes = row.notes;
+                order.salesRep = {
+                  name: row.salesrepname
+                };
+                order.show = {
+                  name: row.showname
+                };
+                firstRow = false;
+              }
+              order.lineItems.push(OrderRepository.getListItemFromRow(row));
+            }
+          ))
       );
     });
 

@@ -11,7 +11,7 @@ export default () => ({
       strategies: ['jwt'],
       scope: ['create:orders']
     },
-    description: 'Get all orders in the system.',
+    description: 'Create a new order..',
     tags: ['api'],
     validate: {
       payload: orderSchema

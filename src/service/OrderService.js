@@ -16,7 +16,6 @@ export default class OrderService {
     this.useServiceAccountAuth = Promise.promisify(this.doc.useServiceAccountAuth, { context: this.doc });
     this.getInfoFromDoc = Promise.promisify(this.doc.getInfo, { context: this.doc });
     this.addWorksheetToDoc = Promise.promisify(this.doc.addWorksheet, { context: this.doc });
-    this.removeWorksheetFromDoc = Promise.promisify(this.doc.removeWorksheet, { context: this.doc });
     this.orderRepo = null;
     this.info = null;
     this.authenticated = false;
@@ -26,9 +25,9 @@ export default class OrderService {
     if (this.authenticated) return new Promise(resolve => resolve());
 
     const me = this;
-    logger.debug("Carlos looking for service account creds: ", Object.keys(JSON.parse(config('BFD_SERVICE_ACCOUNT_CREDS'))).length);
-
-    return this.useServiceAccountAuth(JSON.parse(config('BFD_SERVICE_ACCOUNT_CREDS')))
+    const precreds = config('BFD_SERVICE_ACCOUNT_CREDS');
+    const creds = JSON.parse(precreds);
+    return this.useServiceAccountAuth(creds)
       .then(() => {
         me.authenticated = true;
         return true;
