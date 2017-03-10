@@ -63,6 +63,7 @@ export default class OrderRepository {
 
     return setHeaderRow(columnHeaders)
       .then(() => {
+        let firstPromise = null;
         const rowPromises = [];
         order.lineItems.forEach((lineItem) => {
           if (lineItem.quantity && lineItem.quantity > 0) {
@@ -88,11 +89,16 @@ export default class OrderRepository {
                 salesrepname: order.salesRep.name,
                 showname: order.show.name
               });
-            rowPromises.push(addRow(firstRow || lineItemRow));
+            if (firstRow) firstPromise = addRow(firstRow);
+            else rowPromises.push(addRow(lineItemRow));
           }
         });
-        return Promise.all(rowPromises)
-          .then(() => order);
+
+        return !firstPromise ||
+          firstPromise
+            .then(() =>
+              Promise.all(rowPromises)
+                .then(() => order));
       });
   }
 
