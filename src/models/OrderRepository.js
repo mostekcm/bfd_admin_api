@@ -42,6 +42,14 @@ export default class OrderRepository {
     const setHeaderRow = Promise.promisify(sheet.setHeaderRow, { context: sheet });
     const addRow = Promise.promisify(sheet.addRow, { context: sheet });
     const columnHeaders = [
+      'displayitemname',
+      'displayitemproductname',
+      'displayitemdescription',
+      'displayitemoffsetmerchquantity',
+      'displayitemoffsetmerchskuproductname',
+      'displayitemoffsetmerchskusize',
+      'displayitemcost',
+      'displayitemquantity',
       'lineitemskuproductname',
       'lineitemskuvariety',
       'lineitemskusize',
@@ -63,11 +71,16 @@ export default class OrderRepository {
 
     return setHeaderRow(columnHeaders)
       .then(() => {
-        let firstPromise = null;
         const rowPromises = [];
-        order.lineItems.forEach((lineItem) => {
-          if (lineItem.quantity && lineItem.quantity > 0) {
-            const lineItemRow = {
+        let i = 0;
+        for (; i < order.lineItems.length || i < order.displayItems.length; i += 1) {
+          const lineItem = order.lineItems[i];
+          const displayItem = order.displayItems[i];
+
+          let row = {};
+
+          if (lineItem && lineItem.quantity && lineItem.quantity > 0) {
+            row = Object.assign(row, {
               lineitemskuproductname: lineItem.sku.product.name,
               lineitemskusize: lineItem.sku.size,
               lineitemskuvariety: lineItem.sku.variety,
@@ -75,35 +88,46 @@ export default class OrderRepository {
               lineitemcpu: lineItem.cpu,
               lineitemquantity: lineItem.quantity,
               lineitemtesters: lineItem.testers
-            };
-            const firstRow = rowPromises.length > 0 ? false :
-              Object.assign(lineItemRow, {
-                date: order.date || moment().unix(),
-                storename: order.store.name,
-                storeshippingaddress: order.store.shippingaddress,
-                storebillingaddress: order.store.billingaddress,
-                storephone: order.store.phone,
-                storeemail: order.store.email,
-                storecontact: order.store.contact,
-                notes: order.notes,
-                salesrepname: order.salesRep.name,
-                showname: order.show.name
-              });
-            if (firstRow) firstPromise = addRow(firstRow);
-            else rowPromises.push(addRow(lineItemRow));
+            });
           }
-        });
 
-        return !firstPromise ||
-          firstPromise
-            .then(() =>
-              Promise.all(rowPromises)
-                .then(() => order));
+          if (displayItem && displayItem.quantity && displayItem.quantity > 0) {
+            row = Object.assign(row, {
+              displayitemname: displayItem.name,
+              displayitemproductname: displayItem.product.name,
+              displayitemdescription: displayItem.description,
+              displayitemoffsetmerchquantity: displayItem.offsetMerch.quantity,
+              displayitemoffsetmerchskuproductname: displayItem.offsetMerch.sku.product.name,
+              displayitemoffsetmerchskusize: displayItem.offsetMerch.sku.size,
+              displayitemcost: displayItem.cost,
+              displayitemquantity: displayItem.quantity
+            });
+          }
+
+          if (i === 0) {
+            row = Object.assign(row, {
+              date: order.date || moment().unix(),
+              storename: order.store.name,
+              storeshippingaddress: order.store.shippingAddress,
+              storebillingaddress: order.store.billingAddress,
+              storephone: order.store.phone,
+              storeemail: order.store.email,
+              storecontact: order.store.contact,
+              notes: order.notes,
+              salesrepname: order.salesRep.name,
+              showname: order.show.name
+            });
+          }
+          rowPromises.push(new Promise(resolve => resolve(row)));
+        }
+
+        return Promise.mapSeries(rowPromises, row => addRow(row))
+          .then(() => order);
       });
   }
 
   static getListItemFromRow(row) {
-    return {
+    return row.lineitemskuproductname ? {
       sku: {
         product: {
           name: row.lineitemskuproductname
@@ -115,7 +139,28 @@ export default class OrderRepository {
       cpu: row.lineitemcpu,
       quantity: row.lineitemquantity,
       testers: row.lineitemtesters
-    };
+    } : null;
+  }
+
+  static getDisplayItemFromRow(row) {
+    return row.displayitemname ? {
+      name: row.displayitemname,
+      description: row.displayitemdescription,
+      cost: row.displayitemcost,
+      product: {
+        name: row.displayitemproductname
+      },
+      offsetMerch: {
+        sku: {
+          product: {
+            name: row.displayitemoffsetmerchskuproductname
+          },
+          size: row.displayitemoffsetmerchskusize,
+          quantity: row.displayitemoffsetmerchquantity
+        }
+      },
+      quantity: row.displayitemquantity
+    } : null;
   }
 
   /**
@@ -134,7 +179,8 @@ export default class OrderRepository {
       const getRows = Promise.promisify(sheet.getRows, { context: sheet });
       const order = {
         id: sheet.title,
-        lineItems: []
+        lineItems: [],
+        displayItems: []
       };
       orders[sheet.title] = order;
       sheetIndex[sheet.title] = sheet;
@@ -165,7 +211,10 @@ export default class OrderRepository {
                 };
                 firstRow = false;
               }
-              order.lineItems.push(OrderRepository.getListItemFromRow(row));
+              const lineItem = OrderRepository.getListItemFromRow(row);
+              if (lineItem) order.lineItems.push(lineItem);
+              const displayItem = OrderRepository.getDisplayItemFromRow(row);
+              if (displayItem) order.displayItems.push(displayItem);
             }))
       );
     });

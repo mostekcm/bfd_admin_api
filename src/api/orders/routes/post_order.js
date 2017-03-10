@@ -25,7 +25,8 @@ export default () => ({
       .then(newOrder => reply(newOrder))
       .catch((e) => {
         logger.error(e.message);
-        logger.error(e.stackTrace);
+        logger.error(e.message);
+        logger.error(e.stack);
         return reply(Boom.wrap(e));
       });
   }

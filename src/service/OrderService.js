@@ -61,7 +61,8 @@ export default class OrderService {
     const me = this;
     return this.authenticate()
       .then(() => me.addWorksheetToDoc({
-        title: order.id
+        title: order.id,
+        colCount: 30
       })
         .then(sheet => me.getOrderRepo()
           .then(repo => repo.addOrderToSheet(order, sheet))
