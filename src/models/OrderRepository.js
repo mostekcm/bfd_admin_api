@@ -56,7 +56,8 @@ export default class OrderRepository {
       'lineitemsize',
       'lineitemcpu',
       'lineitemquantity',
-      'lineitemtesters',
+      'lineitemtesterquantity',
+      'lineitemtestercpu',
       'date',
       'storename',
       'storeshippingaddress',
@@ -87,7 +88,8 @@ export default class OrderRepository {
               lineitemsize: lineItem.size,
               lineitemcpu: lineItem.cpu,
               lineitemquantity: lineItem.quantity,
-              lineitemtesters: lineItem.testers
+              lineitemtesterquantity: lineItem.tester.quantity,
+              lineitemtestercpu: lineItem.tester.cpu
             });
           }
 
@@ -138,7 +140,10 @@ export default class OrderRepository {
       size: row.lineitemsize,
       cpu: row.lineitemcpu,
       quantity: row.lineitemquantity,
-      testers: row.lineitemtesters
+      tester: {
+        quantity: row.lineitemtesterquantity,
+        cpu: row.lineitemtestercpu
+      }
     } : null;
   }
 

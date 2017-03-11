@@ -29,8 +29,11 @@ const lineItem = Joi.object().keys({
   description: Joi.string().max(500).allow(''),
   cpu: Joi.number().required(),
   size: Joi.number(),
-  quantity: Joi.number().min(1).max(100000).allow(''),
-  testers: Joi.number().min(0).max(100000).allow('')
+  quantity: Joi.number().min(0).max(100000).allow(''),
+  tester: Joi.object().keys({
+    quantity: Joi.number().min(0).max(100000).allow(''),
+    cpu: Joi.number().min(0).max(1000)
+  })
 });
 
 const offsetMerch = Joi.object().keys({

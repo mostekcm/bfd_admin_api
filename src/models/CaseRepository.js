@@ -38,7 +38,8 @@ export default class CaseRepository {
               cpu: row.cpu,
               size: row.casesize,
               description: row.description,
-              sku: sku
+              sku: sku,
+              tester: { cpu: row.testercpu }
             });
           } else {
             logger.warn(`Skipping row with this data: ${JSON.stringify(row)}`);
