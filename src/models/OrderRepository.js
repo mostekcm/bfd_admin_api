@@ -31,6 +31,44 @@ export default class OrderRepository {
     return new Promise((resolve, reject) => reject(Boom.notFound()));
   }
 
+  patchOrder(orderId, newOrderAttributes) {
+    if (this.orders[orderId]) {
+      const sheet = this.sheets[orderId];
+
+      const getRows = Promise.promisify(sheet.getRows, { context: sheet });
+
+      return getRows({
+        offset: 1,
+        limit: 1000
+      })
+        .then((rows) => {
+          /* TODO: add patching for other things */
+
+          /* shipping */
+          if (newOrderAttributes.shipping !== undefined) {
+            rows[0].shipping = this.orders[orderId].shipping = newOrderAttributes.shipping;
+          }
+
+          /* discount */
+          if (newOrderAttributes.discount !== undefined) {
+            rows[0].discount = this.orders[orderId].discount = newOrderAttributes.discount;
+          }
+
+          /* paidDate */
+          if (newOrderAttributes.paidDate !== undefined) {
+            rows[0].paiddate = this.orders[orderId].paidDate = newOrderAttributes.paidDate;
+          }
+
+          const saveRow = Promise.promisify(rows[0].save, { context: rows[0] });
+
+          return saveRow()
+            .then(() => this.orders[orderId]);
+        });
+    }
+
+    return new Promise((resolve, reject) => reject(Boom.notFound()));
+  }
+
   /**
    * Add a new order to the order workbook
    * @param order
@@ -67,7 +105,11 @@ export default class OrderRepository {
       'storecontact',
       'salesrepname',
       'showname',
-      'notes'
+      'notestocustomer',
+      'internalnotes',
+      'paiddate',
+      'discount',
+      'shipping'
     ];
 
     return setHeaderRow(columnHeaders)
@@ -115,9 +157,13 @@ export default class OrderRepository {
               storephone: order.store.phone,
               storeemail: order.store.email,
               storecontact: order.store.contact,
-              notes: order.notes,
+              internalnotes: order.internalNotes,
+              notestocustomer: order.notesToCustomer,
               salesrepname: order.salesRep.name,
-              showname: order.show.name
+              showname: order.show.name,
+              discount: order.discount,
+              paiddate: order.paidDate,
+              shipping: order.discount
             });
           }
           rowPromises.push(new Promise(resolve => resolve(row)));
@@ -207,13 +253,17 @@ export default class OrderRepository {
                   email: row.storeemail,
                   contact: row.storecontact
                 };
-                order.notes = row.notes;
+                order.notesToCustomer = row.notestocustomer;
+                order.internalNotes = row.internalnotes;
                 order.salesRep = {
                   name: row.salesrepname
                 };
                 order.show = {
                   name: row.showname
                 };
+                order.paidDate = row.paiddate;
+                order.discount = row.discount;
+                order.shipping = row.shipping;
                 firstRow = false;
               }
               const lineItem = OrderRepository.getListItemFromRow(row);

@@ -10,7 +10,7 @@ import auth from './auth';
 const corsPlugin = {
   register: cors,
   options: {
-    methods: ['POST, GET, OPTIONS, DELETE, PUT'],
+    methods: ['POST, GET, OPTIONS, DELETE, PUT, PATCH'],
     origins: JSON.parse(config('BFD_CORS_ORIGINS'))
   }
 };

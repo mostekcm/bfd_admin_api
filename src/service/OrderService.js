@@ -62,11 +62,16 @@ export default class OrderService {
     return this.authenticate()
       .then(() => me.addWorksheetToDoc({
         title: order.id,
-        colCount: 30
+        colCount: 50
       })
         .then(sheet => me.getOrderRepo()
           .then(repo => repo.addOrderToSheet(order, sheet))
         ));
+  }
+
+  patchOrder(orderId, newOrderAttributes) {
+    return this.getOrderRepo()
+      .then(repo => repo.patchOrder(orderId, newOrderAttributes));
   }
 
   deleteOrder(orderId) {
