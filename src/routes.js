@@ -5,6 +5,7 @@ import getOrder from './api/orders/routes/get_order';
 import postOrder from './api/orders/routes/post_order';
 import patchOrder from './api/orders/routes/patch_order';
 import deleteOrder from './api/orders/routes/delete_order';
+import getShowReport from './api/reports/routes/get_show';
 
 const register = (server, options, next) => {
   server.route(getCases(server));
@@ -14,6 +15,7 @@ const register = (server, options, next) => {
   server.route(postOrder(server));
   server.route(patchOrder(server));
   server.route(deleteOrder(server));
+  server.route(getShowReport(server));
   next();
 };
 

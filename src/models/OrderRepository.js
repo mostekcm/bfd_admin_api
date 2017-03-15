@@ -206,9 +206,9 @@ export default class OrderRepository {
           product: {
             name: row.displayitemoffsetmerchskuproductname
           },
-          size: row.displayitemoffsetmerchskusize,
-          quantity: row.displayitemoffsetmerchquantity
-        }
+          size: row.displayitemoffsetmerchskusize
+        },
+        quantity: row.displayitemoffsetmerchquantity
       },
       quantity: row.displayitemquantity
     } : null;

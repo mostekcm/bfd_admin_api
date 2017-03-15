@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import GoogleSpreadsheet from 'google-spreadsheet';
 import Promise from 'bluebird';
 import uuid from 'uuid';
@@ -82,6 +83,15 @@ export default class OrderService {
   getOrder(id) {
     return this.getOrderRepo()
       .then(repo => repo.get(id));
+  }
+
+  getShowOrders(name) {
+    return this.getOrderRepo()
+      .then((repo) => {
+        const orders = repo.getAll();
+
+        return _.filter(orders, order => order.show.name === name);
+      });
   }
 
   getAll() {
