@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { lineItem, displayItem, store } from './common';
+import { lineItem, displayItem, store, payment } from './common';
 
 export default Joi.object().keys({
   store: store.required(),
@@ -11,6 +11,6 @@ export default Joi.object().keys({
   salesRep: Joi.object().keys({ name: Joi.string().max(100).required() }),
   show: Joi.object().keys({ name: Joi.string().max(100).required() }),
   discount: Joi.number().min(0).max(10000),
-  paidDate: Joi.date().timestamp(),
+  payments: Joi.array().items(payment),
   shipping: Joi.number().min(0).max(10000)
 });

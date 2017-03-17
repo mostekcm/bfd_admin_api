@@ -54,9 +54,11 @@ export default class OrderRepository {
             rows[0].discount = this.orders[orderId].discount = newOrderAttributes.discount;
           }
 
-          /* paidDate */
-          if (newOrderAttributes.paidDate !== undefined) {
-            rows[0].paiddate = this.orders[orderId].paidDate = newOrderAttributes.paidDate;
+          /* payments */
+          if (newOrderAttributes.payments) {
+            // TODO: handle patching multiple payment rows
+            rows[0].paiddate = this.orders[orderId].payments[0].date = newOrderAttributes.payments[0].date;
+            rows[0].paidamount = this.orders[orderId].payments[0].amount = newOrderAttributes.payments[0].amount;
           }
 
           const saveRow = Promise.promisify(rows[0].save, { context: rows[0] });
@@ -119,6 +121,7 @@ export default class OrderRepository {
         for (; i < order.lineItems.length || i < order.displayItems.length; i += 1) {
           const lineItem = order.lineItems[i];
           const displayItem = order.displayItems[i];
+          const payment = order.payments[i];
 
           let row = {};
 
@@ -148,6 +151,13 @@ export default class OrderRepository {
             });
           }
 
+          if (payment) {
+            row = Object.assign(row, {
+              paiddate: payment.date,
+              paidamount: payment.amount
+            });
+          }
+
           if (i === 0) {
             row = Object.assign(row, {
               date: order.date || moment().unix(),
@@ -162,10 +172,10 @@ export default class OrderRepository {
               salesrepname: order.salesRep.name,
               showname: order.show.name,
               discount: order.discount,
-              paiddate: order.paidDate,
               shipping: order.discount
             });
           }
+
           rowPromises.push(new Promise(resolve => resolve(row)));
         }
 
@@ -214,6 +224,13 @@ export default class OrderRepository {
     } : null;
   }
 
+  static getPaymentFromRow(row) {
+    return row.paiddate ? {
+      date: row.paiddate,
+      amount: row.paidamount
+    } : null;
+  }
+
   /**
    * Returns a promise that will contain a caseRepository instance or throw an error
    * @param workbook
@@ -231,7 +248,8 @@ export default class OrderRepository {
       const order = {
         id: sheet.title,
         lineItems: [],
-        displayItems: []
+        displayItems: [],
+        payments: []
       };
       orders[sheet.title] = order;
       sheetIndex[sheet.title] = sheet;
@@ -245,6 +263,7 @@ export default class OrderRepository {
             /* Just list items for now, add them to the order */
             rows.forEach((row) => {
               if (firstRow) {
+                order.date = row.date;
                 order.store = {
                   name: row.storename,
                   shippingAddress: row.storeshippingaddress,
@@ -261,11 +280,12 @@ export default class OrderRepository {
                 order.show = {
                   name: row.showname
                 };
-                order.paidDate = row.paiddate;
                 order.discount = row.discount;
                 order.shipping = row.shipping;
                 firstRow = false;
               }
+              const payment = OrderRepository.getPaymentFromRow(row);
+              if (payment) order.payments.push(payment);
               const lineItem = OrderRepository.getListItemFromRow(row);
               if (lineItem) order.lineItems.push(lineItem);
               const displayItem = OrderRepository.getDisplayItemFromRow(row);

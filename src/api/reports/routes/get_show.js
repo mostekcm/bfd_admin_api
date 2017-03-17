@@ -2,23 +2,34 @@ import Joi from 'joi';
 
 import logger from '../../../logger';
 import OrderService from '../../../service/OrderService';
+import LabelService from '../../../service/LabelService';
 
-const addLineItemToIndex = (skuIndex, productName, skuSize, variety, quantity, testerQuantity) => {
-  if (!(productName in skuIndex)) skuIndex[productName] = {};
-  const productIndex = skuIndex[productName];
+const addLineItemLabelUse = (/* labelIndex, labelUses, lineItemInfo */) => {
+  // const productKey = `${lineItemInfo.productName},${lineItemInfo.skuSize},${lineItemInfo.variety}`;
+  //
+  // const labelUse = labelUses[productKey]; carlos you were here, need to store label info
+  //
+  // if (!(lineItemInfo)
+};
 
-  if (!(skuSize in productIndex)) productIndex[skuSize] = {};
-  const sizeIndex = productIndex[skuSize];
+const addLineItemToIndex = (skuIndex, labelIndex, labelUse, lineItemInfo) => {
+  if (!(lineItemInfo.productName in skuIndex)) skuIndex[lineItemInfo.productName] = {};
+  const productIndex = skuIndex[lineItemInfo.productName];
 
-  if (!(variety in sizeIndex)) {
-    sizeIndex[variety] = {
-      quantity: parseFloat(quantity),
-      testerQuantity: testerQuantity ? parseFloat(testerQuantity) : 0
+  if (!(lineItemInfo.skuSize in productIndex)) productIndex[lineItemInfo.skuSize] = {};
+  const sizeIndex = productIndex[lineItemInfo.skuSize];
+
+  if (!(lineItemInfo.variety in sizeIndex)) {
+    sizeIndex[lineItemInfo.variety] = {
+      quantity: lineItemInfo.quantity,
+      testerQuantity: lineItemInfo.testerQuantity ? lineItemInfo.testerQuantity : 0
     };
   } else {
-    sizeIndex[variety].quantity += parseFloat(quantity);
-    sizeIndex[variety].testerQuantity += testerQuantity ? parseFloat(testerQuantity) : 0;
+    sizeIndex[lineItemInfo.variety].quantity += lineItemInfo.quantity;
+    sizeIndex[lineItemInfo.variety].testerQuantity += lineItemInfo.testerQuantity ? lineItemInfo.testerQuantity : 0;
   }
+
+  addLineItemLabelUse(labelIndex, labelUse, lineItemInfo);
 };
 
 export default () => ({
@@ -39,38 +50,56 @@ export default () => ({
   },
   handler: (req, reply) => {
     const orderService = new OrderService();
-    orderService.getShowOrders(req.params.name)
-      .then((orders) => {
-        const skuIndex = {};
-        const displayItemIndex = {};
+    const labelService = new LabelService();
+    labelService.getAll()
+      .then(labelUse =>
+        orderService.getShowOrders(req.params.name)
+          .then((orders) => {
+            const labelIndex = {};
+            const skuIndex = {};
+            const displayItemIndex = {};
 
-        orders.forEach((order) => {
-          order.lineItems.forEach((lineItem) => {
-            /* add line item to skus */
-            addLineItemToIndex(skuIndex, lineItem.sku.product.name, lineItem.sku.size, lineItem.sku.variety,
-              lineItem.quantity, lineItem.tester.quantity);
-          });
+            orders.forEach((order) => {
+              order.lineItems.forEach((lineItem) => {
+                const lineItemInfo = {
+                  productName: lineItem.sku.product.name,
+                  skuSize: lineItem.sku.size,
+                  variety: lineItem.sku.variety,
+                  quantity: parseFloat(lineItem.quantity)
+                };
+                if (lineItem.tester.quantity) lineItemInfo.testerQuantity = parseFloat(lineItem.tester.quantity);
 
-          order.displayItems.forEach((displayItem) => {
-            /* Add display item to index */
-            if (!(displayItem.product.name in displayItemIndex)) displayItemIndex[displayItem.product.name] = JSON.parse(JSON.stringify(displayItem));
-            else {
-              displayItemIndex[displayItem.product.name].quantity =
-                parseFloat(displayItemIndex[displayItem.product.name].quantity) + parseFloat(displayItem.quantity);
-            }
+                /* add line item to skus */
+                addLineItemToIndex(skuIndex, labelIndex, labelUse, lineItemInfo);
+              });
 
-            /* add offset merch to skuIndex */
-            addLineItemToIndex(skuIndex, displayItem.offsetMerch.sku.product.name, displayItem.offsetMerch.sku.size, '',
-              displayItem.offsetMerch.quantity, 0);
-          });
-        });
+              order.displayItems.forEach((displayItem) => {
+                /* Add display item to index */
+                if (!(displayItem.product.name in displayItemIndex)) displayItemIndex[displayItem.product.name] = JSON.parse(JSON.stringify(displayItem));
+                else {
+                  displayItemIndex[displayItem.product.name].quantity =
+                    parseFloat(displayItemIndex[displayItem.product.name].quantity) + parseFloat(displayItem.quantity);
+                }
 
-        reply({
-          showName: req.params.name,
-          skus: skuIndex,
-          displays: displayItemIndex
-        });
-      })
+                /* add offset merch to skuIndex */
+                const lineItemInfo = {
+                  productName: displayItem.offsetMerch.sku.product.name,
+                  skuSize: displayItem.offsetMerch.sku.size,
+                  variety: '',
+                  quantity: parseFloat(displayItem.offsetMerch.quantity)
+                };
+
+                addLineItemToIndex(skuIndex, labelIndex, labelUse, lineItemInfo);
+              });
+            });
+
+            reply({
+              showName: req.params.name,
+              skus: skuIndex,
+              displays: displayItemIndex,
+              labels: labelIndex
+            });
+          }))
       .catch((e) => {
         if (e.message) {
           logger.error('Error trying to get order data: ', e.message);
