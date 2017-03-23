@@ -27,6 +27,7 @@ export default class LabelRepository {
           const key = `${row.size},${row.type},${row.shape}`;
 
           labels[key] = {
+            labelKey: key,
             size: row.size,
             type: row.type,
             shape: row.shape,
@@ -45,7 +46,7 @@ export default class LabelRepository {
   /*
    * Returns a promise that will contain a labelRepository instance or throw an error
    */
-  static createFromSheet(labelSheet, labelUseSheet) {
+  static createFromSheets(labelSheet, labelUseSheet) {
     const getLabelUseRows = Promise.promisify(labelUseSheet.getRows, { context: labelUseSheet });
 
     /* Loop through and initialize the set of labels from the label4s tab */
@@ -67,6 +68,7 @@ export default class LabelRepository {
               throw new ReferenceError(`Could not find any labels that match (${labelKey}) for label use (${key})`);
             }
             labelUse[key].push({
+              productKey: key,
               sku: {
                 product: { name: row.skuproductname },
                 size: row.skusize

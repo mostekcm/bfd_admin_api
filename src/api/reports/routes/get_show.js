@@ -2,14 +2,37 @@ import Joi from 'joi';
 
 import logger from '../../../logger';
 import OrderService from '../../../service/OrderService';
-// import LabelService from '../../../service/LabelService';
+import LabelService from '../../../service/LabelService';
 
-const addLineItemLabelUse = (/* labelIndex, labelUses, lineItemInfo */) => {
-  // const productKey = `${lineItemInfo.productName},${lineItemInfo.skuSize},${lineItemInfo.variety}`;
-  //
-  // const labelUse = labelUses[productKey]; carlos you were here, need to store label info
-  //
-  // if (!(lineItemInfo)
+const addLineItemLabelUse = (labelIndex, labelUse, lineItemInfo) => {
+  const productKey = `${lineItemInfo.productName},${lineItemInfo.skuSize}`;
+
+  const productLabelUses = labelUse[productKey];
+
+  if (!productLabelUses) {
+    logger.warn(`Couldn't find label use for ${productKey}`);
+    return;
+  }
+
+  productLabelUses.forEach((productLabelUse) => {
+    const labelKey = productLabelUse.labelInfo.labelKey;
+
+    if (!(labelKey in labelIndex)) labelIndex[labelKey] = {};
+    const specificLabelIndex = labelIndex[labelKey];
+
+    const productVarietyKey = `${productKey},${lineItemInfo.variety}`;
+
+    if (!(productVarietyKey in specificLabelIndex)) {
+      specificLabelIndex[productVarietyKey] = {
+        labelKey: labelKey,
+        labels: lineItemInfo.quantity,
+        labelsPerSheet: productLabelUse.labelInfo.labelsPerSheet,
+        needsPrinting: productLabelUse.needsPrinting
+      };
+    } else {
+      specificLabelIndex[productVarietyKey].labels += lineItemInfo.quantity;
+    }
+  });
 };
 
 const addLineItemToIndex = (skuIndex, labelIndex, labelUse, lineItemInfo) => {
@@ -50,57 +73,81 @@ export default () => ({
   },
   handler: (req, reply) => {
     const orderService = new OrderService();
-    // const labelService = new LabelService();
-    // labelService.getAll()
-    //   .then(labelUse =>
-    orderService.getShowOrders(req.params.name)
-      .then((orders) => {
-        const labelUse = undefined;
-        const labelIndex = {};
-        const skuIndex = {};
-        const displayItemIndex = {};
+    const labelService = new LabelService();
+    labelService.getAll()
+      .then(labelUse =>
+        orderService.getShowOrders(req.params.name)
+          .then((orders) => {
+            const labelIndex = {};
+            const skuIndex = {};
+            const displayItemIndex = {};
 
-        orders.forEach((order) => {
-          order.lineItems.forEach((lineItem) => {
-            const lineItemInfo = {
-              productName: lineItem.sku.product.name,
-              skuSize: lineItem.sku.size,
-              variety: lineItem.sku.variety,
-              quantity: Math.round(parseFloat(lineItem.quantity) * parseFloat(lineItem.size))
-            };
-            if (lineItem.tester.quantity) lineItemInfo.testerQuantity = parseFloat(lineItem.tester.quantity);
+            orders.forEach((order) => {
+              order.lineItems.forEach((lineItem) => {
+                const lineItemInfo = {
+                  productName: lineItem.sku.product.name,
+                  skuSize: lineItem.sku.size,
+                  variety: lineItem.sku.variety,
+                  quantity: Math.round(parseFloat(lineItem.quantity) * parseFloat(lineItem.size))
+                };
+                if (lineItem.tester.quantity) lineItemInfo.testerQuantity = parseFloat(lineItem.tester.quantity);
 
-            /* add line item to skus */
-            addLineItemToIndex(skuIndex, labelIndex, labelUse, lineItemInfo);
-          });
+                /* add line item to skus */
+                addLineItemToIndex(skuIndex, labelIndex, labelUse, lineItemInfo);
+              });
 
-          order.displayItems.forEach((displayItem) => {
-            /* Add display item to index */
-            if (!(displayItem.product.name in displayItemIndex)) displayItemIndex[displayItem.product.name] = JSON.parse(JSON.stringify(displayItem));
-            else {
-              displayItemIndex[displayItem.product.name].quantity =
-                parseFloat(displayItemIndex[displayItem.product.name].quantity) + parseFloat(displayItem.quantity);
-            }
+              order.displayItems.forEach((displayItem) => {
+                /* Add display item to index */
+                if (!(displayItem.product.name in displayItemIndex)) displayItemIndex[displayItem.product.name] = JSON.parse(JSON.stringify(displayItem));
+                else {
+                  displayItemIndex[displayItem.product.name].quantity =
+                    parseFloat(displayItemIndex[displayItem.product.name].quantity) + parseFloat(displayItem.quantity);
+                }
 
-            /* add offset merch to skuIndex */
-            const lineItemInfo = {
-              productName: displayItem.offsetMerch.sku.product.name,
-              skuSize: displayItem.offsetMerch.sku.size,
-              variety: '',
-              quantity: parseFloat(displayItem.offsetMerch.quantity)
-            };
+                /* add offset merch to skuIndex */
+                const lineItemInfo = {
+                  productName: displayItem.offsetMerch.sku.product.name,
+                  skuSize: displayItem.offsetMerch.sku.size,
+                  variety: '',
+                  quantity: parseFloat(displayItem.offsetMerch.quantity)
+                };
 
-            addLineItemToIndex(skuIndex, labelIndex, labelUse, lineItemInfo);
-          });
-        });
+                addLineItemToIndex(skuIndex, labelIndex, labelUse, lineItemInfo);
+              });
+            });
 
-        reply({
-          showName: req.params.name,
-          skus: skuIndex,
-          displays: displayItemIndex,
-          labels: labelIndex
-        });
-      }) // )
+            const labelTotals = [];
+            const labelsToPrint = [];
+
+            Object.keys(labelIndex).forEach((labelKey) => {
+              let totalSheets = 0;
+              Object.keys(labelIndex[labelKey]).forEach((productKey) => {
+                const useInfo = labelIndex[labelKey][productKey];
+                const sheets = Math.ceil(parseInt(useInfo.labels, 10) / parseInt(useInfo.labelsPerSheet, 10));
+                if (useInfo.needsPrinting) {
+                  labelsToPrint.push({
+                    labelKey: labelKey,
+                    productKey: productKey,
+                    sheets: sheets
+                  });
+                }
+                totalSheets += sheets;
+              });
+
+              labelTotals.push({
+                labelKey: labelKey,
+                sheets: totalSheets
+              });
+            });
+
+            reply({
+              showName: req.params.name,
+              skus: skuIndex,
+              displays: displayItemIndex,
+              labelTotals: labelTotals,
+              labelsToPrint: labelsToPrint
+            });
+          }))
       .catch((e) => {
         if (e.message) {
           logger.error('Error trying to get order data: ', e.message);
