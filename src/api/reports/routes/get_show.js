@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import Joi from 'joi';
 
 import logger from '../../../logger';
@@ -20,7 +21,9 @@ const addLineItemLabelUse = (labelIndex, labelUse, lineItemInfo) => {
     if (!(labelKey in labelIndex)) labelIndex[labelKey] = {};
     const specificLabelIndex = labelIndex[labelKey];
 
-    const productVarietyKey = `${productKey},${lineItemInfo.variety}`;
+    const varietyItem = lineItemInfo.variety.length > 0 ? `,${lineItemInfo.variety}` : '';
+    const location = productLabelUse.location;
+    const productVarietyKey = `${productKey}${varietyItem},${location}`;
 
     if (!(productVarietyKey in specificLabelIndex)) {
       specificLabelIndex[productVarietyKey] = {
@@ -140,12 +143,14 @@ export default () => ({
               });
             });
 
+            const sortedPrintLabels = _.sortBy(labelsToPrint, ['productKey', 'labelKey']);
+
             reply({
               showName: req.params.name,
               skus: skuIndex,
               displays: displayItemIndex,
               labelTotals: labelTotals,
-              labelsToPrint: labelsToPrint
+              labelsToPrint: sortedPrintLabels
             });
           }))
       .catch((e) => {
