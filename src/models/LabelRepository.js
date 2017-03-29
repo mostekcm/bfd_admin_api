@@ -75,7 +75,8 @@ export default class LabelRepository {
               },
               location: row.location,
               needsPrinting: row.needsprinting,
-              labelInfo: labelInfo[labelKey]
+              labelInfo: labelInfo[labelKey],
+              pdf: row.pdf
             });
           });
 

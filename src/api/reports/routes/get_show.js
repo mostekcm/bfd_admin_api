@@ -25,12 +25,25 @@ const addLineItemLabelUse = (labelIndex, labelUse, lineItemInfo) => {
     const location = productLabelUse.location;
     const productVarietyKey = `${productKey}${varietyItem},${location}`;
 
+    let pdfLink = productLabelUse.pdf;
+    if (pdfLink.indexOf('|') >= 0) {
+      const pdfLinks = pdfLink.split(';');
+      pdfLink = '';
+      pdfLinks.forEach((pdfLinkInstance) => {
+        const parts = pdfLinkInstance.split('|');
+        if (parts[0] === lineItemInfo.variety) {
+          pdfLink = parts[1];
+        }
+      });
+    }
+
     if (!(productVarietyKey in specificLabelIndex)) {
       specificLabelIndex[productVarietyKey] = {
         labelKey: labelKey,
         labels: lineItemInfo.quantity,
         labelsPerSheet: productLabelUse.labelInfo.labelsPerSheet,
-        needsPrinting: productLabelUse.needsPrinting
+        needsPrinting: productLabelUse.needsPrinting === 'TRUE',
+        pdf: pdfLink
       };
     } else {
       specificLabelIndex[productVarietyKey].labels += lineItemInfo.quantity;
@@ -131,7 +144,8 @@ export default () => ({
                   labelsToPrint.push({
                     labelKey: labelKey,
                     productKey: productKey,
-                    sheets: sheets
+                    sheets: sheets,
+                    pdf: useInfo.pdf
                   });
                 }
                 totalSheets += sheets;
