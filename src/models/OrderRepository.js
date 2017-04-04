@@ -88,6 +88,7 @@ export default class OrderRepository {
       'displayitemoffsetmerchquantity',
       'displayitemoffsetmerchskuproductname',
       'displayitemoffsetmerchskusize',
+      'displayitemoffsetmerchskumsrp',
       'displayitemcost',
       'displayitemquantity',
       'lineitemskuproductname',
@@ -146,6 +147,7 @@ export default class OrderRepository {
               displayitemoffsetmerchquantity: displayItem.offsetMerch.quantity,
               displayitemoffsetmerchskuproductname: displayItem.offsetMerch.sku.product.name,
               displayitemoffsetmerchskusize: displayItem.offsetMerch.sku.size,
+              displayitemoffsetmerchskumsrp: displayItem.offsetMerch.sku.msrp,
               displayitemcost: displayItem.cost,
               displayitemquantity: displayItem.quantity
             });
@@ -216,7 +218,8 @@ export default class OrderRepository {
           product: {
             name: row.displayitemoffsetmerchskuproductname
           },
-          size: row.displayitemoffsetmerchskusize
+          size: row.displayitemoffsetmerchskusize,
+          msrp: row.displayitemoffsetmerchskumsrp
         },
         quantity: row.displayitemoffsetmerchquantity
       },

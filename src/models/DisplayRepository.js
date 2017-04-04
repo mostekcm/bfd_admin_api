@@ -14,7 +14,7 @@ export default class DisplayRepository {
   /*
    * Returns a promise that will contain a displayRepository instance or throw an error
    */
-  static createFromSheet(sheet) {
+  static createFromSheet(sheet, skuRepo) {
     const getDisplayRows = Promise.promisify(sheet.getRows, { context: sheet });
 
     /* Loop through and initialize the set of displays from the display4s tab */
@@ -37,7 +37,8 @@ export default class DisplayRepository {
                 quantity: row.offsetmerchquantity,
                 sku: {
                   product: { name: row.offsetmerchskuproductname },
-                  size: row.offsetmerchskusize
+                  size: row.offsetmerchskusize,
+                  msrp: skuRepo.find(row.offsetmerchskuproductname, row.offsetmerchskusize)
                 }
               },
               cost: row.cost

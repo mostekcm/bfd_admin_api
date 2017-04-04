@@ -4,6 +4,7 @@ import Promise from 'bluebird';
 import config from '../config';
 import logger from '../logger';
 import DisplayRepository from '../models/DisplayRepository';
+import SkuRepository from '../models/SkuRepository';
 
 export default class DisplayService {
   constructor() {
@@ -32,11 +33,18 @@ export default class DisplayService {
           return Promise.reject(e);
         }
 
-        return DisplayRepository.createFromSheet(displaysSheet)
-          .then((displayRepo) => {
-            me.displayRepo = displayRepo;
-            return displayRepo.getAll();
-          })
+        const skusSheet = info.worksheets[1];
+        if (!skusSheet || skusSheet.title !== 'Skus') {
+          const e = new Error(`Bad skus sheet: ${skusSheet ? skusSheet.title : 'none found'}`);
+          return Promise.reject(e);
+        }
+
+        return SkuRepository.create(skusSheet)
+          .then(skuRepo => DisplayRepository.createFromSheet(displaysSheet, skuRepo)
+            .then((displayRepo) => {
+              me.displayRepo = displayRepo;
+              return displayRepo.getAll();
+            }))
           .catch(err => Promise.reject(err));
       });
   }
