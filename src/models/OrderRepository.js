@@ -122,7 +122,7 @@ export default class OrderRepository {
         for (; i < order.lineItems.length || i < order.displayItems.length; i += 1) {
           const lineItem = order.lineItems[i];
           const displayItem = order.displayItems[i];
-          const payment = order.payments[i];
+          const payment = order.payments ? order.payments[i] : undefined;
 
           let row = {};
 

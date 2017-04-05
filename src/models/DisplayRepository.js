@@ -38,7 +38,7 @@ export default class DisplayRepository {
                 sku: {
                   product: { name: row.offsetmerchskuproductname },
                   size: row.offsetmerchskusize,
-                  msrp: skuRepo.find(row.offsetmerchskuproductname, row.offsetmerchskusize)
+                  msrp: skuRepo.find(row.offsetmerchskuproductname, row.offsetmerchskusize).msrp
                 }
               },
               cost: row.cost
