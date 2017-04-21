@@ -94,6 +94,15 @@ export default class OrderService {
       });
   }
 
+  getPendingCommissionOrders() {
+    return this.getOrderRepo()
+      .then((repo) => {
+        const orders = repo.getAll();
+
+        return _.filter(orders, order => !order.commissionPaidDate && order.payments.length > 0 && order.salesRep.name !== 'Jes Mostek');
+      });
+  }
+
   getAll() {
     return this.getOrderRepo()
       .then(repo => repo.getAll());

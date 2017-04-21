@@ -111,8 +111,13 @@ export default class OrderRepository {
       'notestocustomer',
       'internalnotes',
       'paiddate',
+      'paidamount',
       'discount',
-      'shipping'
+      'shipping',
+      'duedate',
+      'targetshipdate',
+      'shipdate',
+      'commissionpaiddate'
     ];
 
     return setHeaderRow(columnHeaders)
@@ -174,7 +179,11 @@ export default class OrderRepository {
               salesrepname: order.salesRep.name,
               showname: order.show.name,
               discount: order.discount,
-              shipping: order.discount
+              shipping: order.discount,
+              duedate: order.dueDate,
+              targetshipdate: order.targetShipDate,
+              shipdate: order.shipDate,
+              commissionpaiddate: order.commissionPaidDate
             });
           }
 
@@ -285,6 +294,10 @@ export default class OrderRepository {
                 };
                 order.discount = row.discount;
                 order.shipping = row.shipping;
+                order.dueDate = row.duedate;
+                order.targetShipDate = row.targetshipdate;
+                order.shipDate = row.shipdate;
+                order.commissionPaidDate = row.commissionpaiddate;
                 firstRow = false;
               }
               const payment = OrderRepository.getPaymentFromRow(row);
