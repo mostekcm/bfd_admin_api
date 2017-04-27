@@ -1,4 +1,6 @@
 import _ from 'lodash';
+import { sprintf } from 'sprintf-js';
+import moment from 'moment';
 import GoogleSpreadsheet from 'google-spreadsheet';
 import Promise from 'bluebird';
 import uuid from 'uuid';
@@ -91,6 +93,19 @@ export default class OrderService {
         const orders = repo.getAll();
 
         return _.filter(orders, order => order.show.name === name);
+      });
+  }
+
+  getMonthOrders(month, year) {
+    return this.getOrderRepo()
+      .then((repo) => {
+        const formattedMonth = sprintf('%02d', month);
+        const orders = repo.getAll();
+        const startDate = moment(`${year}-${formattedMonth}-01T00:00:00Z`);
+        const startTime = startDate.unix();
+        const endTime = moment(startDate).add(1, 'M').unix();
+
+        return _.filter(orders, order => order.targetShipDate && order.targetShipDate >= startTime && order.targetShipDate < endTime);
       });
   }
 
