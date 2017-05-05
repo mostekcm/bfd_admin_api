@@ -28,7 +28,7 @@ export default class DisplayRepository {
         logger.debug('Read ' + rows.length + ' display rows');
 
         rows.forEach((row) => {
-          if (row.productname) {
+          if (row.name) {
             displays.push({
               name: row.name,
               product: { name: row.productname },

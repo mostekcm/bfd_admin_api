@@ -90,10 +90,10 @@ export default (labelUse, orders) => new Promise((resolve) => {
 
     order.displayItems.forEach((displayItem) => {
       /* Add display item to index */
-      if (!(displayItem.product.name in displayItemIndex)) displayItemIndex[displayItem.product.name] = JSON.parse(JSON.stringify(displayItem));
+      if (!(displayItem.name in displayItemIndex)) displayItemIndex[displayItem.name] = JSON.parse(JSON.stringify(displayItem));
       else {
-        displayItemIndex[displayItem.product.name].quantity =
-          parseFloat(displayItemIndex[displayItem.product.name].quantity) + parseFloat(displayItem.quantity);
+        displayItemIndex[displayItem.name].quantity =
+          parseFloat(displayItemIndex[displayItem.name].quantity) + parseFloat(displayItem.quantity);
       }
 
       /* add offset merch to skuIndex */

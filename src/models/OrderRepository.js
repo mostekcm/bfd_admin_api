@@ -116,7 +116,7 @@ export default class OrderRepository {
       'shipping',
       'duedate',
       'targetshipdate',
-      'shipdate',
+      'shippeddate',
       'commissionpaiddate'
     ];
 
@@ -166,8 +166,9 @@ export default class OrderRepository {
           }
 
           if (i === 0) {
+            const orderDate = order.date || moment().unix();
             row = Object.assign(row, {
-              date: order.date || moment().unix(),
+              date: orderDate,
               storename: order.store.name,
               storeshippingaddress: order.store.shippingAddress,
               storebillingaddress: order.store.billingAddress,
@@ -180,9 +181,9 @@ export default class OrderRepository {
               showname: order.show.name,
               discount: order.discount,
               shipping: order.discount,
-              duedate: order.dueDate,
-              targetshipdate: order.targetShipDate,
-              shipdate: order.shipDate,
+              duedate: order.dueDate || orderDate,
+              targetshipdate: order.targetShipDate || orderDate,
+              shippeddate: order.shippedDate,
               commissionpaiddate: order.commissionPaidDate
             });
           }
@@ -296,7 +297,7 @@ export default class OrderRepository {
                 order.shipping = row.shipping;
                 order.dueDate = row.duedate;
                 order.targetShipDate = row.targetshipdate;
-                order.shipDate = row.shipdate;
+                order.shippedDate = row.shippeddate;
                 order.commissionPaidDate = row.commissionpaiddate;
                 firstRow = false;
               }
