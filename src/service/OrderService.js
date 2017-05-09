@@ -105,7 +105,7 @@ export default class OrderService {
         const startTime = startDate.unix();
         const endTime = moment(startDate).add(1, 'M').unix();
 
-        return _.filter(orders, order => order.targetShipDate && order.targetShipDate >= startTime && order.targetShipDate < endTime);
+        return _.filter(orders, order => (order.targetShipDate && order.targetShipDate >= startTime && order.targetShipDate < endTime) && !order.shippedDate);
       });
   }
 
