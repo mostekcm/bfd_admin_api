@@ -73,6 +73,7 @@ export default (labelUse, orders) => new Promise((resolve) => {
   const labelIndex = {};
   const skuIndex = {};
   const displayItemIndex = {};
+  const orderInfo = [];
 
   orders.forEach((order) => {
     order.lineItems.forEach((lineItem) => {
@@ -106,6 +107,14 @@ export default (labelUse, orders) => new Promise((resolve) => {
 
       addLineItemToIndex(skuIndex, labelIndex, labelUse, lineItemInfo);
     });
+
+    orderInfo.push({
+      date: order.date,
+      targetShipDate: order.targetShipDate,
+      show: order.show,
+      store: order.store,
+      salesRep: order.salesRep
+    });
   });
 
   const labelTotals = [];
@@ -136,6 +145,7 @@ export default (labelUse, orders) => new Promise((resolve) => {
   const sortedPrintLabels = _.sortBy(labelsToPrint, ['productKey', 'labelKey']);
 
   return resolve({
+    orders: orderInfo,
     skus: skuIndex,
     displays: displayItemIndex,
     labelTotals: labelTotals,

@@ -19,7 +19,7 @@ export default () => ({
     tags: ['api'],
     validate: {
       params: {
-        month: Joi.number().min(1).max(12).required(),
+        month: Joi.number().min(0).max(12).required(),
         year: Joi.number().min(2016).max(3000)
       }
     }
@@ -31,11 +31,12 @@ export default () => ({
     const year = req.params.year || parseInt(moment().format('YYYY'), 10);
 
     labelService.getAll()
-      .then(labelUse =>
-        orderService.getMonthOrders(req.params.month, year)
+      .then((labelUse) => {
+        const getPromise = req.params.month === 0 ? orderService.getNextMonthOrders() : orderService.getMonthOrders(req.params.month, year);
+        return getPromise
           .then(orders => getOrderNeeds(labelUse, orders))
-          .then(report => reply(_.merge({ month: `${req.params.month}/${year}` }, report)))
-      )
+          .then(report => reply(_.merge({ month: `${req.params.month}/${year}` }, report)));
+      })
       .catch((e) => {
         if (e.message) {
           logger.error('Error trying to get order data: ', e.message);

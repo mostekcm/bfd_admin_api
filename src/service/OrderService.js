@@ -96,6 +96,16 @@ export default class OrderService {
       });
   }
 
+  getNextMonthOrders() {
+    return this.getOrderRepo()
+      .then((repo) => {
+        const orders = repo.getAll();
+        const endTime = moment().add(1, 'M').unix();
+
+        return _.filter(orders, order => (order.targetShipDate && order.targetShipDate < endTime) && !order.shippedDate);
+      });
+  }
+
   getMonthOrders(month, year) {
     return this.getOrderRepo()
       .then((repo) => {
