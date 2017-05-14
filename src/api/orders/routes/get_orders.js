@@ -23,7 +23,7 @@ export default () => ({
   handler: (req, reply) => {
     logger.debug('Getting orders');
     const orderService = new OrderService();
-    orderService.getAll()
+    orderService.getAllNotCancelled()
       .then(orders => reply(_.values(orders)))
       .catch((e) => {
         if (e.message) {

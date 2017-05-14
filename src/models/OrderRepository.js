@@ -123,6 +123,7 @@ export default class OrderRepository {
       'duedate',
       'targetshipdate',
       'shippeddate',
+      'cancelled',
       'commissionpaiddate'
     ];
 
@@ -190,6 +191,7 @@ export default class OrderRepository {
               duedate: order.dueDate || orderDate,
               targetshipdate: order.targetShipDate || orderDate,
               shippeddate: order.shippedDate,
+              cancelled: order.cancelled,
               commissionpaiddate: order.commissionPaidDate
             });
           }
@@ -304,6 +306,7 @@ export default class OrderRepository {
                 order.dueDate = row.duedate;
                 order.targetShipDate = row.targetshipdate;
                 order.shippedDate = row.shippeddate;
+                order.cancelled = row.cancelled;
                 order.commissionPaidDate = row.commissionpaiddate;
                 firstRow = false;
               }

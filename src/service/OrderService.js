@@ -128,6 +128,15 @@ export default class OrderService {
       });
   }
 
+  getAllNotCancelled() {
+    return this.getOrderRepo()
+      .then((repo) => {
+        const orders = repo.getAll();
+
+        return _.filter(orders, order => !order.cancelled);
+      });
+  }
+
   getAll() {
     return this.getOrderRepo()
       .then(repo => repo.getAll());
