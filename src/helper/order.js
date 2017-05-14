@@ -35,16 +35,19 @@ export const orderTotals = (order) => {
     });
   }
 
-  const totalOwed = (shippingAndHandling + totalProduct) - (discount + totalPaid);
+  const total = (shippingAndHandling + totalProduct) - (discount);
+  const totalOwed = total - totalPaid;
   const commissionBase = totalItem + totalDisplay;
   const commissionDue = commissionBase * 0.15;
   return {
+    total: total,
     owed: totalOwed,
     item: totalItem,
     tester: totalTester,
     display: totalDisplay,
     product: totalProduct,
     totalPaid: totalPaid,
+    discount: discount,
     commissionBase: commissionBase,
     commissionDue: commissionDue,
     shippingAndHandling: shippingAndHandling

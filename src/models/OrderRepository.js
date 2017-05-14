@@ -2,6 +2,8 @@ import Promise from 'bluebird';
 import Boom from 'boom';
 import moment from 'moment';
 
+import * as orderHelper from '../helper/order';
+
 /**
  * This takes in a google sheet and converts it into an SKU object
  */
@@ -64,7 +66,10 @@ export default class OrderRepository {
           const saveRow = Promise.promisify(rows[0].save, { context: rows[0] });
 
           return saveRow()
-            .then(() => this.orders[orderId]);
+            .then(() => {
+              this.orders[orderId].totals = orderHelper.orderTotals(this.orders[orderId]);
+              return this.orders[orderId];
+            });
         });
     }
 
@@ -78,6 +83,7 @@ export default class OrderRepository {
    * @returns {*|Promise.<orderId>} promise that adds the order and returns the new ID
    */
   addOrderToSheet(order, sheet) {
+    order.totals = orderHelper.orderTotals(order);
     this.orders[order.id] = order;
     const setHeaderRow = Promise.promisify(sheet.setHeaderRow, { context: sheet });
     const addRow = Promise.promisify(sheet.addRow, { context: sheet });
@@ -272,7 +278,7 @@ export default class OrderRepository {
           offset: 1,
           limit: 1000
         })
-          .then(rows =>
+          .then((rows) => {
             /* Just list items for now, add them to the order */
             rows.forEach((row) => {
               if (firstRow) {
@@ -307,8 +313,13 @@ export default class OrderRepository {
               if (lineItem) order.lineItems.push(lineItem);
               const displayItem = OrderRepository.getDisplayItemFromRow(row);
               if (displayItem) order.displayItems.push(displayItem);
-            }))
-      );
+            });
+            return order;
+          })
+          .then(() => {
+            order.totals = orderHelper.orderTotals(order);
+            return order;
+          }));
     });
 
     return Promise.all(sheetPromises)
