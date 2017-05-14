@@ -174,6 +174,7 @@ export default class OrderRepository {
 
           if (i === 0) {
             const orderDate = order.date || moment().unix();
+            const defaultTargetDate = moment.unix(orderDate).add(14, 'days').unix();
             row = Object.assign(row, {
               date: orderDate,
               storename: order.store.name,
@@ -188,8 +189,8 @@ export default class OrderRepository {
               showname: order.show.name,
               discount: order.discount,
               shipping: order.discount,
-              duedate: order.dueDate || moment.unix(orderDate).add(14, 'days').unix(),
-              targetshipdate: order.targetShipDate || orderDate,
+              duedate: order.dueDate || defaultTargetDate,
+              targetshipdate: order.targetShipDate || defaultTargetDate,
               shippeddate: order.shippedDate,
               cancelled: order.cancelled,
               commissionpaiddate: order.commissionPaidDate
