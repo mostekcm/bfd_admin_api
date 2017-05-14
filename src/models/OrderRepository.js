@@ -188,7 +188,7 @@ export default class OrderRepository {
               showname: order.show.name,
               discount: order.discount,
               shipping: order.discount,
-              duedate: order.dueDate || orderDate,
+              duedate: order.dueDate || moment.unix(orderDate).add(14, 'days').unix(),
               targetshipdate: order.targetShipDate || orderDate,
               shippeddate: order.shippedDate,
               cancelled: order.cancelled,
