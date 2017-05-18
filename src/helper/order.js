@@ -4,8 +4,7 @@ export const testerCost = lineItem => (lineItem.tester.quantity ? parseFloat(lin
 
 export const displayCost = displayItem => parseFloat(displayItem.quantity) * parseFloat(displayItem.cost);
 
-const roundToNearestPenny = amount => Math.round(amount * 100.0) / 100.0;
-
+export const roundToNearestPenny = amount => Math.round(amount * 100.0) / 100.0;
 
 export const orderTotals = (order) => {
   let totalItem = 0.0;
@@ -39,7 +38,7 @@ export const orderTotals = (order) => {
   const totalOwed = total - totalPaid;
   const commissionBase = totalItem + totalDisplay;
   const commissionDue = commissionBase * 0.15;
-  return {
+  const totals = {
     total: total,
     owed: totalOwed,
     item: totalItem,
@@ -52,4 +51,10 @@ export const orderTotals = (order) => {
     commissionDue: commissionDue,
     shippingAndHandling: shippingAndHandling
   };
+
+  Object.keys(totals).forEach((key) => {
+    if (totals[key]) totals[key] = roundToNearestPenny(totals[key]);
+  });
+
+  return totals;
 };
