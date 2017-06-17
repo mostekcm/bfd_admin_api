@@ -9,7 +9,7 @@ export default () => ({
   config: {
     auth: {
       strategies: ['jwt'],
-      scope: ['create:orders']
+      scope: ['delete:orders']
     },
     description: 'Get all orders in the system.',
     tags: ['api'],

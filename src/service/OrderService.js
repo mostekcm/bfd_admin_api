@@ -77,6 +77,11 @@ export default class OrderService {
       .then(repo => repo.patchOrder(orderId, newOrderAttributes));
   }
 
+  putOrder(orderId, newOrder) {
+    return this.getOrderRepo()
+      .then(repo => repo.putOrder(orderId, newOrder));
+  }
+
   deleteOrder(orderId) {
     return this.getOrderRepo()
       .then(repo => repo.deleteOrder(orderId));

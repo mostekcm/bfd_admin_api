@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import Promise from 'bluebird';
 import Boom from 'boom';
 import moment from 'moment';
@@ -33,44 +34,24 @@ export default class OrderRepository {
     return new Promise((resolve, reject) => reject(Boom.notFound()));
   }
 
-  patchOrder(orderId, newOrderAttributes) {
+  updateOrder(orderId, newOrder) {
     if (this.orders[orderId]) {
       const sheet = this.sheets[orderId];
 
-      const getRows = Promise.promisify(sheet.getRows, { context: sheet });
+      const clearSheet = Promise.promisify(sheet.clear, { context: sheet });
 
-      return getRows({
-        offset: 1,
-        limit: 1000
-      })
-        .then((rows) => {
-          /* TODO: add patching for other things */
+      return clearSheet()
+            .then(() => this.addOrderToSheet(newOrder, sheet));
+    }
 
-          /* shipping */
-          if (newOrderAttributes.shipping !== undefined) {
-            rows[0].shipping = this.orders[orderId].shipping = newOrderAttributes.shipping;
-          }
+    return new Promise((resolve, reject) => reject(Boom.notFound()));
+  }
 
-          /* discount */
-          if (newOrderAttributes.discount !== undefined) {
-            rows[0].discount = this.orders[orderId].discount = newOrderAttributes.discount;
-          }
+  patchOrder(orderId, newOrderAttributes) {
+    if (this.orders[orderId]) {
+      const newOrder = _.assign(this.orders[orderId], newOrderAttributes);
 
-          /* payments */
-          if (newOrderAttributes.payments) {
-            // TODO: handle patching multiple payment rows
-            rows[0].paiddate = this.orders[orderId].payments[0].date = newOrderAttributes.payments[0].date;
-            rows[0].paidamount = this.orders[orderId].payments[0].amount = newOrderAttributes.payments[0].amount;
-          }
-
-          const saveRow = Promise.promisify(rows[0].save, { context: rows[0] });
-
-          return saveRow()
-            .then(() => {
-              this.orders[orderId].totals = orderHelper.orderTotals(this.orders[orderId]);
-              return this.orders[orderId];
-            });
-        });
+      return this.updateOrder(orderId, newOrder);
     }
 
     return new Promise((resolve, reject) => reject(Boom.notFound()));
