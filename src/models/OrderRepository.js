@@ -4,7 +4,7 @@ import Boom from 'boom';
 import moment from 'moment';
 
 import * as orderHelper from '../helper/order';
-
+import getOffsetMerchFromRow from '../helper/displayItem';
 /**
  * This takes in a google sheet and converts it into an SKU object
  */
@@ -41,7 +41,7 @@ export default class OrderRepository {
       const clearSheet = Promise.promisify(sheet.clear, { context: sheet });
 
       return clearSheet()
-            .then(() => this.addOrderToSheet(newOrder, sheet));
+        .then(() => this.addOrderToSheet(newOrder, sheet));
     }
 
     return new Promise((resolve, reject) => reject(Boom.notFound()));
@@ -51,10 +51,24 @@ export default class OrderRepository {
     if (this.orders[orderId]) {
       const newOrder = _.assign(this.orders[orderId], newOrderAttributes);
 
+      console.log('Carlos new order: ', newOrder);
+
       return this.updateOrder(orderId, newOrder);
     }
 
     return new Promise((resolve, reject) => reject(Boom.notFound()));
+  }
+
+  static getOffsetMerchOutput(offsetMerch) {
+    const offsetMerchOutput = {};
+    if (Array.isArray(offsetMerch)) {
+      offsetMerchOutput.quantity = JSON.stringify(_.map(offsetMerch, 'quantity'));
+      offsetMerchOutput.productName = JSON.stringify(_.map(offsetMerch, 'sku.product.name'));
+      offsetMerchOutput.skuSize = JSON.stringify(_.map(offsetMerch, 'sku.size'));
+      offsetMerchOutput.skuMsrp = JSON.stringify(_.map(offsetMerch, 'sku.msrp'));
+    }
+
+    return offsetMerchOutput;
   }
 
   /**
@@ -133,14 +147,15 @@ export default class OrderRepository {
           }
 
           if (displayItem && displayItem.quantity && displayItem.quantity > 0) {
+            const offsetMerchOutput = OrderRepository.getOffsetMerchOutput(displayItem.offsetMerch);
             row = Object.assign(row, {
               displayitemname: displayItem.name,
               displayitemproductname: displayItem.product.name,
               displayitemdescription: displayItem.description,
-              displayitemoffsetmerchquantity: displayItem.offsetMerch.quantity,
-              displayitemoffsetmerchskuproductname: displayItem.offsetMerch.sku.product.name,
-              displayitemoffsetmerchskusize: displayItem.offsetMerch.sku.size,
-              displayitemoffsetmerchskumsrp: displayItem.offsetMerch.sku.msrp,
+              displayitemoffsetmerchquantity: offsetMerchOutput.quantity,
+              displayitemoffsetmerchskuproductname: offsetMerchOutput.productName,
+              displayitemoffsetmerchskusize: offsetMerchOutput.skuSize,
+              displayitemoffsetmerchskumsrp: offsetMerchOutput.skuMsrp,
               displayitemcost: displayItem.cost,
               displayitemquantity: displayItem.quantity
             });
@@ -169,7 +184,7 @@ export default class OrderRepository {
               salesrepname: order.salesRep.name,
               showname: order.show.name,
               discount: order.discount,
-              shipping: order.discount,
+              shipping: order.shipping,
               duedate: order.dueDate || defaultTargetDate,
               targetshipdate: order.targetShipDate || defaultTargetDate,
               shippeddate: order.shippedDate,
@@ -213,16 +228,11 @@ export default class OrderRepository {
       product: {
         name: row.displayitemproductname
       },
-      offsetMerch: {
-        sku: {
-          product: {
-            name: row.displayitemoffsetmerchskuproductname
-          },
-          size: row.displayitemoffsetmerchskusize,
-          msrp: row.displayitemoffsetmerchskumsrp
-        },
-        quantity: row.displayitemoffsetmerchquantity
-      },
+      offsetMerch: getOffsetMerchFromRow(
+        row.displayitemoffsetmerchskuproductname,
+        row.displayitemoffsetmerchskusize,
+        row.displayitemoffsetmerchskumsrp,
+        row.displayitemoffsetmerchquantity),
       quantity: row.displayitemquantity
     } : null;
   }

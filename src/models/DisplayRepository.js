@@ -1,6 +1,8 @@
 import Promise from 'bluebird';
 
 import logger from '../logger';
+import { getPossibleJsonValue } from '../helper/sheetTools';
+import getOffsetMerchFromRow from '../helper/displayItem';
 
 /**
  * This takes in a google sheet and converts it into an SKU object
@@ -9,6 +11,24 @@ export default class DisplayRepository {
   /* This class is for containing all of the displays and providing search functions for it. */
   constructor(displays) {
     this.displays = displays;
+  }
+
+  static getMsrp(skuRepo, productNameInput, productSizeInput) {
+    const productName = getPossibleJsonValue(productNameInput);
+    const productSize = getPossibleJsonValue(productSizeInput);
+
+    if (Array.isArray(productName)) {
+      const msrp = [];
+      let i = 0;
+      for (; i < productName.length; i += 1) {
+        msrp.push(skuRepo.find(productName[i], productSize[i]).msrp);
+      }
+      return msrp;
+    } else if (productName) {
+      return skuRepo.find(productName, productSize).msrp;
+    }
+
+    return undefined;
   }
 
   /*
@@ -33,14 +53,12 @@ export default class DisplayRepository {
               name: row.name,
               product: { name: row.productname },
               description: row.description,
-              offsetMerch: {
-                quantity: row.offsetmerchquantity,
-                sku: {
-                  product: { name: row.offsetmerchskuproductname },
-                  size: row.offsetmerchskusize,
-                  msrp: skuRepo.find(row.offsetmerchskuproductname, row.offsetmerchskusize).msrp
-                }
-              },
+              offsetMerch: getOffsetMerchFromRow(
+                row.offsetmerchskuproductname,
+                row.offsetmerchskusize,
+                DisplayRepository.getMsrp(skuRepo, row.offsetmerchskuproductname, row.offsetmerchskusize),
+                row.offsetmerchquantity
+              ),
               cost: row.cost
             });
           } else {
