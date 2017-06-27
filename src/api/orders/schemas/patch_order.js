@@ -11,8 +11,8 @@ export default Joi.object().keys({
   salesRep: Joi.object().keys({ name: Joi.string().max(100).required() }),
   show: Joi.object().keys({ name: Joi.string().max(100).required() }),
   discount: Joi.number().min(0).max(10000),
-  paidDate: Joi.date().timestamp(),
-  shipping: Joi.number().min(0).max(10000)
+  shipping: Joi.number().min(0).max(10000),
+  shippedDate: Joi.number().min(0)
 }).or(
   'store',
   'date',
@@ -24,4 +24,5 @@ export default Joi.object().keys({
   'show',
   'discount',
   'paidDate',
-  'shipping');
+  'shipping',
+  'shippedDate');
