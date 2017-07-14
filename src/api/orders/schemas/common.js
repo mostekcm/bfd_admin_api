@@ -61,6 +61,6 @@ export const store = Joi.object().keys({
 });
 
 export const payment = Joi.object().keys({
-  date: Joi.date().timestamp().required(),
+  date: Joi.number().min(1).required(),
   amount: Joi.number().min(0.01).max(1000000).required()
 });
