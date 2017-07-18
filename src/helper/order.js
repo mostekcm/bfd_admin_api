@@ -6,6 +6,26 @@ export const displayCost = displayItem => parseFloat(displayItem.quantity) * par
 
 export const roundToNearestPenny = amount => Math.round(amount * 100.0) / 100.0;
 
+export const getCommissionInfo = (order, commissionBase) => {
+  /* Default is 0.15% commission */
+  let commissionMultiplier = 0.15;
+  /* If Jes is the sales rep, commission goes to 0 unless "On the Road" is the show, then set to 7 */
+  if (order.salesRep.name === 'Jes Mostek') {
+    commissionMultiplier = order.show.name === 'Reorder' ? 0.07 : 0;
+  }
+
+  const commission = commissionBase * commissionMultiplier;
+  const jes = (commissionBase * 0.2) - commission;
+  return {
+    commissionDue: order.commissionPaidDate ? 0 : commission,
+    commissionPaid: order.commissionPaidDate ? commission : 0,
+    dueJes: order.jesPaidDate ? 0 : jes,
+    paidJes: order.jesPaidDate ? jes : 0,
+    commissionMultiplier,
+    jesMultiplier: 0.2 - commissionMultiplier
+  };
+};
+
 export const orderTotals = (order) => {
   let totalItem = 0.0;
   let totalTester = 0.0;
@@ -37,18 +57,23 @@ export const orderTotals = (order) => {
   const total = (shippingAndHandling + totalProduct) - (discount);
   const totalOwed = total - totalPaid;
   const commissionBase = totalItem + totalDisplay;
-  const commissionDue = commissionBase * 0.15;
+  const commissionInfo = getCommissionInfo(order, commissionBase);
   const totals = {
-    total: total,
+    total,
     owed: totalOwed,
     item: totalItem,
     tester: totalTester,
     display: totalDisplay,
     product: totalProduct,
-    totalPaid: totalPaid,
-    discount: discount,
-    commissionBase: commissionBase,
-    commissionDue: commissionDue,
+    totalPaid,
+    discount,
+    commissionBase,
+    commissionDue: commissionInfo.commissionDue,
+    commissionPaid: commissionInfo.commissionPaid,
+    commissionMultiplier: commissionInfo.commissionMultiplier,
+    dueJes: commissionInfo.dueJes,
+    paidJes: commissionInfo.paidJes,
+    jesMultiplier: commissionInfo.jesMultiplier,
     shippingAndHandling: shippingAndHandling
   };
 

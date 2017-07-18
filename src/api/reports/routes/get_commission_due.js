@@ -6,7 +6,7 @@ import * as orderHelper from '../../../helper/order';
 
 export default () => ({
   method: 'GET',
-  path: '/api/reports/commission/due',
+  path: '/api/reports/commission/due/{name}',
   config: {
     auth: {
       strategies: ['jwt'],
@@ -23,10 +23,18 @@ export default () => ({
         const orderMap = {};
         orders.forEach((order) => {
           const orderTotals = orderHelper.orderTotals(order);
+          if (req.params.name === 'jes' && orderTotals.dueJes === 0) return;
+          if (req.params.name === 'max' && orderTotals.commissionDue === 0) return;
           if (!(order.salesRep.name in orderMap)) orderMap[order.salesRep.name] = { totalCommissionBase: 0.0, totalCommissionDue: 0.0, orders: [] };
           const thisOrderInfo = orderMap[order.salesRep.name];
           thisOrderInfo.totalCommissionBase += orderTotals.commissionBase;
-          thisOrderInfo.totalCommissionDue += orderTotals.commissionDue;
+          if (req.params.name === 'jes') {
+            thisOrderInfo.totalCommissionDue += orderTotals.dueJes;
+            orderTotals.commissionDue = orderTotals.dueJes;
+            orderTotals.commissionMultiplier = orderTotals.jesMultiplier;
+          } else {
+            thisOrderInfo.totalCommissionDue += orderTotals.commissionDue;
+          }
 
           thisOrderInfo.orders.push({
             totals: orderTotals,

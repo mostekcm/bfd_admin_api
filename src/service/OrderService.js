@@ -129,7 +129,7 @@ export default class OrderService {
       .then((repo) => {
         const orders = repo.getAll();
 
-        return _.filter(orders, order => !order.commissionPaidDate && order.payments.length > 0 && order.salesRep.name !== 'Jes Mostek');
+        return _.filter(orders, order => (!order.commissionPaidDate || !order.jesPaidDate) && order.payments.length > 0);
       });
   }
 
