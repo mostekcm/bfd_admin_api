@@ -2,6 +2,7 @@ import _ from 'lodash';
 import Promise from 'bluebird';
 import Boom from 'boom';
 import moment from 'moment';
+import { sprintf } from 'sprintf-js';
 
 import * as orderHelper from '../helper/order';
 import getOffsetMerchFromRow from '../helper/displayItem';
@@ -79,6 +80,7 @@ export default class OrderRepository {
    */
   addOrderToSheet(order, sheet) {
     order.totals = orderHelper.orderTotals(order);
+    order.invoiceNumber = order.invoiceNumber || sprintf('BFD%06d', this.orders.length + 1348);
     this.orders[order.id] = order;
     const setHeaderRow = Promise.promisify(sheet.setHeaderRow, { context: sheet });
     const addRow = Promise.promisify(sheet.addRow, { context: sheet });
@@ -101,6 +103,7 @@ export default class OrderRepository {
       'lineitemtesterquantity',
       'lineitemtestercpu',
       'date',
+      'invoicenumber',
       'storename',
       'storeshippingaddress',
       'storebillingaddress',
@@ -173,6 +176,7 @@ export default class OrderRepository {
             const defaultTargetDate = moment.unix(orderDate).add(14, 'days').unix();
             row = Object.assign(row, {
               date: orderDate,
+              invoicenumber: order.invoiceNumber,
               storename: order.store.name,
               storeshippingaddress: order.store.shippingAddress,
               storebillingaddress: order.store.billingAddress,
@@ -256,7 +260,9 @@ export default class OrderRepository {
     const orders = {};
     const sheetIndex = {};
     const sheetPromises = [];
+    let index = 0;
     sheets.forEach((sheet) => {
+      index += 1;
       const getRows = Promise.promisify(sheet.getRows, { context: sheet });
       const order = {
         id: sheet.title,
@@ -277,6 +283,7 @@ export default class OrderRepository {
             rows.forEach((row) => {
               if (firstRow) {
                 order.date = row.date;
+                order.invoiceNumber = row.invoicenumber || sprintf('BFD%06d', index + 1348);
                 order.store = {
                   name: row.storename,
                   shippingAddress: row.storeshippingaddress,

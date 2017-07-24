@@ -3,7 +3,8 @@ import { lineItem, displayItem, store, payment } from './common';
 
 export default Joi.object().keys({
   store: store,
-  date: Joi.date().timestamp(),
+  date: Joi.number().min(0),
+  invoiceNumber: Joi.number().min(1300),
   lineItems: Joi.array().items(lineItem),
   displayItems: Joi.array().items(displayItem),
   notesToCustomer: Joi.string().max(10000).allow(''),
@@ -18,6 +19,7 @@ export default Joi.object().keys({
 }).or(
   'store',
   'date',
+  'invoiceNumber',
   'lineItems',
   'displayItems',
   'notesToCustomer',
