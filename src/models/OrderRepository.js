@@ -80,7 +80,7 @@ export default class OrderRepository {
    */
   addOrderToSheet(order, sheet) {
     order.totals = orderHelper.orderTotals(order);
-    order.invoiceNumber = order.invoiceNumber || sprintf('BFD%06d', this.orders.length + 1348);
+    order.invoiceNumber = order.invoiceNumber || sprintf('BFD%06d', Object.keys(this.orders).length + 1348);
     this.orders[order.id] = order;
     const setHeaderRow = Promise.promisify(sheet.setHeaderRow, { context: sheet });
     const addRow = Promise.promisify(sheet.addRow, { context: sheet });

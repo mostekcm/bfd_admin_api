@@ -9,9 +9,6 @@ export const roundToNearestPenny = amount => Math.round(amount * 100.0) / 100.0;
 export const getCommissionInfo = (order, commissionBase) => {
   /* Default is 0.15% commission */
   let commissionMultiplier = 0.15;
-  console.log('Carlos, salesRep for order: ', order.salesRep);
-  console.log('Carlos, store for order: ', order.store);
-  console.log('Carlos, id for order: ', order.id);
   /* If Jes is the sales rep, commission goes to 0 unless "On the Road" is the show, then set to 7 */
   if (order.salesRep.name === 'Jes Mostek') {
     commissionMultiplier = order.show.name === 'Reorder' ? 0.07 : 0;
