@@ -62,14 +62,12 @@ export default class OrderService {
     /* Add a new sheet */
     order.id = uuid.v4();
     const me = this;
-    return this.authenticate()
-      .then(() => me.addWorksheetToDoc({
+    return this.getOrderRepo()
+      .then(repo => me.addWorksheetToDoc({
         title: order.id,
         colCount: 50
       })
-        .then(sheet => me.getOrderRepo()
-          .then(repo => repo.addOrderToSheet(order, sheet))
-        ));
+        .then(sheet => repo.addOrderToSheet(order, sheet)));
   }
 
   patchOrder(orderId, newOrderAttributes) {
