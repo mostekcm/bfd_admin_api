@@ -59,7 +59,8 @@ export default class DisplayRepository {
                 DisplayRepository.getMsrp(skuRepo, row.offsetmerchskuproductname, row.offsetmerchskusize),
                 row.offsetmerchquantity
               ),
-              cost: row.cost
+              cost: row.cost,
+              weight: row.weight
             });
           } else {
             logger.warn(`Skipping row with this data: ${JSON.stringify(row)}`);

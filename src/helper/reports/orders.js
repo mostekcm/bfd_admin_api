@@ -97,15 +97,17 @@ export default (labelUse, orders) => new Promise((resolve) => {
           parseFloat(displayItemIndex[displayItem.name].quantity) + parseFloat(displayItem.quantity);
       }
 
-      /* add offset merch to skuIndex */
-      const lineItemInfo = {
-        productName: displayItem.offsetMerch.sku.product.name,
-        skuSize: displayItem.offsetMerch.sku.size,
-        variety: '',
-        quantity: parseFloat(displayItem.offsetMerch.quantity)
-      };
+      displayItem.offsetMerch.forEach((offsetMerchItem) => {
+        /* add offset merch to skuIndex */
+        const lineItemInfo = {
+          productName: offsetMerchItem.sku.product.name,
+          skuSize: offsetMerchItem.sku.size,
+          variety: '',
+          quantity: parseFloat(offsetMerchItem.quantity)
+        };
 
-      addLineItemToIndex(skuIndex, labelIndex, labelUse, lineItemInfo);
+        return addLineItemToIndex(skuIndex, labelIndex, labelUse, lineItemInfo);
+      });
     });
 
     orderInfo.push({

@@ -12,7 +12,7 @@ export default class DisplayService {
     // TODO: Do caching for this
     // TODO: Move this to a provider pattern
     // spreadsheet key is the long id in the sheets URL
-    this.doc = new GoogleSpreadsheet('1u_uTiO5kxHmBsbf1YbKocn18ZSzRwge9xF1ZRFEGvF0');
+    this.doc = new GoogleSpreadsheet(config('CONFIG_SHEET'));
     this.useServiceAccountAuth = Promise.promisify(this.doc.useServiceAccountAuth, { context: this.doc });
     this.getInfo = Promise.promisify(this.doc.getInfo, { context: this.doc });
     this.displayRepo = null;

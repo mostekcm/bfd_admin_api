@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import Promise from 'bluebird';
 
 import logger from '../logger';
@@ -9,10 +10,7 @@ export default class CaseRepository {
   /* This class is for containing all of the cases and providing search functions for it. */
   constructor(cases) {
     this.cases = cases;
-  }
-
-  static createFromService() {
-
+    this.casesIndex = _(cases).groupBy(caseInfo => caseInfo.sku.product.name).value();
   }
 
   /*
@@ -32,14 +30,14 @@ export default class CaseRepository {
         logger.debug('Read ' + rows.length + ' case rows');
 
         rows.forEach((row) => {
-          if (row.productname) {
+          if (row.productname && !row.deleted) {
             const sku = skuRepo.find(row.productname, row.unitsize);
             cases.push({
               cpu: row.cpu,
               size: row.casesize,
               description: row.description,
               sku: sku,
-              tester: { cpu: row.testercpu }
+              tester: { cpu: row.testercpu, weight: row.testerweight }
             });
           } else {
             logger.warn(`Skipping row with this data: ${JSON.stringify(row)}`);
@@ -48,6 +46,10 @@ export default class CaseRepository {
 
         return new CaseRepository(cases);
       });
+  }
+
+  find(productName, size) {
+    return _.filter(this.casesIndex[productName], caseInfo => caseInfo.sku.size === size)[0];
   }
 
   /*

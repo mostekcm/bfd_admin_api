@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { lineItem, displayItem, store, payment } from './common';
+import { lineItem, displayItem, store, payment, commission } from './common';
 
 export default Joi.object().keys({
   store: store,
@@ -14,6 +14,7 @@ export default Joi.object().keys({
   discount: Joi.number().min(0).max(10000),
   dueDate: Joi.number().min(0),
   payments: Joi.array().items(payment),
+  commissions: Joi.array().items(commission),
   shipping: Joi.number().min(0).max(10000),
   shippedDate: Joi.number().min(0)
 }).or(
@@ -28,6 +29,7 @@ export default Joi.object().keys({
   'show',
   'discount',
   'payments',
+  'commissions',
   'dueDate',
   'shipping',
   'shippedDate');

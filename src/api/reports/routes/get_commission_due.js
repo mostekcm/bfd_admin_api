@@ -2,7 +2,6 @@ import _ from 'lodash';
 
 import logger from '../../../logger';
 import OrderService from '../../../service/OrderService';
-import * as orderHelper from '../../../helper/order';
 
 export default () => ({
   method: 'GET',
@@ -22,22 +21,23 @@ export default () => ({
       .then((orders) => {
         const orderMap = {};
         orders.forEach((order) => {
-          const orderTotals = orderHelper.orderTotals(order);
-          if (req.params.name === 'jes' && orderTotals.dueJes === 0) return;
-          if (req.params.name === 'max' && orderTotals.commissionDue === 0) return;
+          const commissionInfo = _(order.totals.commissionInfo).filter(info => info.payee === req.params.name).value();
+
+          /* Exit early if commission is not due */
+          if (commissionInfo.length === 0 || commissionInfo[0].due <= 0) return;
+          if (commissionInfo.length > 1) throw new Error(`Bad commission information for order (${order.id})`);
+
           if (!(order.salesRep.name in orderMap)) orderMap[order.salesRep.name] = { totalCommissionBase: 0.0, totalCommissionDue: 0.0, orders: [] };
           const thisOrderInfo = orderMap[order.salesRep.name];
-          thisOrderInfo.totalCommissionBase += orderTotals.commissionBase;
-          if (req.params.name === 'jes') {
-            thisOrderInfo.totalCommissionDue += orderTotals.dueJes;
-            orderTotals.commissionDue = orderTotals.dueJes;
-            orderTotals.commissionMultiplier = orderTotals.jesMultiplier;
-          } else {
-            thisOrderInfo.totalCommissionDue += orderTotals.commissionDue;
-          }
+          thisOrderInfo.totalCommissionBase += order.totals.commissionBase;
+          thisOrderInfo.totalCommissionDue += commissionInfo[0].due;
 
           thisOrderInfo.orders.push({
-            totals: orderTotals,
+            id: order.id,
+            commissions: order.commissions,
+            commissionInfo: order.totals.commissionInfo,
+            commissionBase: order.totals.commissionBase,
+            commission: commissionInfo[0],
             show: order.show,
             date: order.date,
             finalPayment: _.maxBy(order.payments, o => o.date),

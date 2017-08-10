@@ -6,14 +6,21 @@ import { sprintf } from 'sprintf-js';
 
 import * as orderHelper from '../helper/order';
 import getOffsetMerchFromRow from '../helper/displayItem';
+
 /**
  * This takes in a google sheet and converts it into an SKU object
  */
 export default class OrderRepository {
   /* This class is for containing all of the cases and providing search functions for it. */
-  constructor(orders, sheets) {
+  constructor(orders, sheets, casesIndex, displays) {
     this.orders = orders;
     this.sheets = sheets;
+    this.casesIndex = casesIndex;
+    this.displays = displays;
+  }
+
+  findCase(productName, size) {
+    return _.filter(this.casesIndex[productName], caseInfo => caseInfo.sku.size === size)[0];
   }
 
   /**
@@ -79,7 +86,7 @@ export default class OrderRepository {
    * @returns {*|Promise.<orderId>} promise that adds the order and returns the new ID
    */
   addOrderToSheet(order, sheet) {
-    order.totals = orderHelper.orderTotals(order);
+    order.totals = orderHelper.orderTotals(order, this.casesIndex, this.displays);
     order.invoiceNumber = order.invoiceNumber || sprintf('BFD%06d', Object.keys(this.orders).length + 1349);
     this.orders[order.id] = order;
     const setHeaderRow = Promise.promisify(sheet.setHeaderRow, { context: sheet });
@@ -122,17 +129,23 @@ export default class OrderRepository {
       'targetshipdate',
       'shippeddate',
       'cancelled',
-      'commissionpaiddate'
+      'commissionpayee',
+      'commissionpaiddate',
+      'commissionpaidamount',
+      'commissionmultiplier'
     ];
 
     return setHeaderRow(columnHeaders)
       .then(() => {
         const rowPromises = [];
         let i = 0;
-        for (; i < order.lineItems.length || i < order.displayItems.length; i += 1) {
+        order.payments = order.payments || [];
+        order.commissions = order.commissions || [];
+        for (; i < order.lineItems.length || i < order.displayItems.length || i < order.payments.length || i < order.commissions.length; i += 1) {
           const lineItem = order.lineItems[i];
           const displayItem = order.displayItems[i];
-          const payment = order.payments ? order.payments[i] : undefined;
+          const payment = order.payments[i];
+          const commission = order.commissions[i];
 
           let row = {};
 
@@ -171,6 +184,15 @@ export default class OrderRepository {
             });
           }
 
+          if (commission) {
+            row = Object.assign(row, {
+              commissionpayee: commission.payee,
+              commissionpaiddate: commission.paidDate,
+              commissionpaidamount: commission.paidAmount,
+              commissionmultiplier: commission.multiplier
+            });
+          }
+
           if (i === 0) {
             const orderDate = order.date || moment().unix();
             const defaultTargetDate = moment.unix(orderDate).add(14, 'days').unix();
@@ -192,8 +214,7 @@ export default class OrderRepository {
               duedate: order.dueDate || defaultTargetDate,
               targetshipdate: order.targetShipDate || defaultTargetDate,
               shippeddate: order.shippedDate,
-              cancelled: order.cancelled,
-              commissionpaiddate: order.commissionPaidDate
+              cancelled: order.cancelled
             });
           }
 
@@ -248,15 +269,38 @@ export default class OrderRepository {
     } : null;
   }
 
+  static getCommissionFromRow(row) {
+    if (row.commissionpaiddate) {
+      if (!row.commissionpaidamount) {
+        /* must be old, calculate this on the fly */
+        return {
+          payee: 'max',
+          paidDate: row.commissionpaiddate,
+          multiplier: 0.15
+        };
+      }
+
+      return {
+        payee: row.commissionpayee,
+        paidAmount: row.commissionpaidamount,
+        paidDate: row.commissionpaiddate,
+        multiplier: row.commissionmultiplier
+      };
+    }
+
+    return null;
+  }
+
   /**
    * Returns a promise that will contain a caseRepository instance or throw an error
    * @param workbook
    * @returns {*|Promise.<OrderRepository>}
    */
-  static createFromSheets(sheets) {
+  static createFromSheets(sheets, cases, displays) {
     /*
      * Loop through all of the sheets in the workbook
      */
+    const casesIndex = _(cases).groupBy(caseInfo => caseInfo.sku.product.name).value();
     const orders = {};
     const sheetIndex = {};
     const sheetPromises = [];
@@ -268,7 +312,8 @@ export default class OrderRepository {
         id: sheet.title,
         lineItems: [],
         displayItems: [],
-        payments: []
+        payments: [],
+        commissions: []
       };
       orders[sheet.title] = order;
       sheetIndex[sheet.title] = sheet;
@@ -306,7 +351,6 @@ export default class OrderRepository {
                 order.targetShipDate = row.targetshipdate;
                 order.shippedDate = row.shippeddate;
                 order.cancelled = row.cancelled;
-                order.commissionPaidDate = row.commissionpaiddate;
                 firstRow = false;
               }
               const payment = OrderRepository.getPaymentFromRow(row);
@@ -315,17 +359,19 @@ export default class OrderRepository {
               if (lineItem) order.lineItems.push(lineItem);
               const displayItem = OrderRepository.getDisplayItemFromRow(row);
               if (displayItem) order.displayItems.push(displayItem);
+              const commission = OrderRepository.getCommissionFromRow(row);
+              if (commission) order.commissions.push(commission);
             });
             return order;
           })
           .then(() => {
-            order.totals = orderHelper.orderTotals(order);
+            order.totals = orderHelper.orderTotals(order, casesIndex, displays);
             return order;
           }));
     });
 
     return Promise.all(sheetPromises)
-      .then(() => new OrderRepository(orders, sheetIndex));
+      .then(() => new OrderRepository(orders, sheetIndex, casesIndex, displays));
   }
 
   /**

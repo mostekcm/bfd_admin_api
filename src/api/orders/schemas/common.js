@@ -64,3 +64,10 @@ export const payment = Joi.object().keys({
   date: Joi.number().min(1).required(),
   amount: Joi.number().min(0.01).max(1000000).required()
 });
+
+export const commission = Joi.object().keys({
+  payee: Joi.string().min(1).required(),
+  paidDate: Joi.number().min(1).required(),
+  paidAmount: Joi.number().min(0.01).max(1000000).required(),
+  multiplier: Joi.number().min(0.01).max(1.0)
+});

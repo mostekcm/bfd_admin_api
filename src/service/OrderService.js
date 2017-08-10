@@ -9,13 +9,16 @@ import config from '../config';
 import logger from '../logger';
 import OrderRepository from '../models/OrderRepository';
 
+import CaseService from './CaseService';
+import DisplayService from './DisplayService';
+
 export default class OrderService {
   constructor() {
     /* Grab orders from the google sheet */
     // TODO: Do caching for this
     // TODO: Move this to a provider pattern
     // spreadsheet key is the long id in the sheets URL
-    this.doc = new GoogleSpreadsheet('119bM1NZrl61IBfBfQfQcjIYgsh1JL8LDzY11C2IwmRA');
+    this.doc = new GoogleSpreadsheet(config('ORDERS_SHEET'));
     this.useServiceAccountAuth = Promise.promisify(this.doc.useServiceAccountAuth, { context: this.doc });
     this.getInfoFromDoc = Promise.promisify(this.doc.getInfo, { context: this.doc });
     this.addWorksheetToDoc = Promise.promisify(this.doc.addWorksheet, { context: this.doc });
@@ -50,11 +53,16 @@ export default class OrderService {
       .then((info) => {
         logger.debug('Loaded Info for Order Workbook');
 
-        return OrderRepository.createFromSheets(info.worksheets)
-          .then((repo) => {
-            this.orderRepo = repo;
-            return repo;
-          });
+        const caseService = new CaseService();
+        const displayService = new DisplayService();
+
+        return caseService.getAll()
+          .then(cases => displayService.getAll()
+            .then(displays => OrderRepository.createFromSheets(info.worksheets, cases, displays)
+              .then((repo) => {
+                this.orderRepo = repo;
+                return repo;
+              })));
       });
   }
 

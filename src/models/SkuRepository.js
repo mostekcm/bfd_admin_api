@@ -40,7 +40,8 @@ class SkuRepository {
             },
             msrp: row.msrp,
             upc: row.upc,
-            size: row.size
+            size: row.size,
+            weight: row.weight
           };
         });
 
