@@ -6,6 +6,7 @@ import { sprintf } from 'sprintf-js';
 
 import * as orderHelper from '../helper/order';
 import getOffsetMerchFromRow from '../helper/displayItem';
+import logger from '../logger';
 
 /**
  * This takes in a google sheet and converts it into an SKU object
@@ -59,7 +60,7 @@ export default class OrderRepository {
     if (this.orders[orderId]) {
       const newOrder = _.assign(this.orders[orderId], newOrderAttributes);
 
-      console.log('Carlos new order: ', newOrder);
+      logger.info('new order: ', newOrder);
 
       return this.updateOrder(orderId, newOrder);
     }

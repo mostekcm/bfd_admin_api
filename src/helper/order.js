@@ -69,7 +69,7 @@ const findDisplay = (displays, name) =>
 const lineItemWeight = (item, casesIndex) => {
   const caseInfo = findCase(casesIndex, item.sku.product.name, item.sku.size);
   if (!caseInfo) {
-    logger.error(`Missing case for ${item.sku.product.name} ${item.sku.size}`);
+    logger.error(`Missing case for (${item.sku.product.name}) (${item.sku.size})`);
     logger.error('carlos, cases index: ', casesIndex);
     return -1000;
   }

@@ -11,7 +11,6 @@ var nconf = require('nconf');
 /* Make sure you process dotenv before nconf! */
 dotenv.config();
 const configFile = path.resolve(path.join(__dirname, '../BFDServiceAccount.json'));
-console.log('Carlos: ', configFile);
 nconf
   .env()
   .file('BFD_SERVICE_ACCOUNT', configFile)
