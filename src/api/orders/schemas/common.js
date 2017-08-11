@@ -51,7 +51,8 @@ export const displayItem = Joi.object().keys({
   cost: Joi.number().required(),
   offsetMerch: Joi.array().items(offsetMerch).required(),
   quantity: Joi.number().min(1).max(100000).allow(''),
-  testers: Joi.number().min(0).max(100000).allow('')
+  testers: Joi.number().min(0).max(100000).allow(''),
+  weight: Joi.number()
 });
 
 export const store = Joi.object().keys({
