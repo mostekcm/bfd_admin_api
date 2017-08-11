@@ -21,7 +21,8 @@ const sku = Joi.object().keys({
   }),
   cpu: Joi.number(),
   msrp: Joi.number(),
-  upc: Joi.string().max(50).allow('')
+  upc: Joi.string().max(50).allow(''),
+  weight: Joi.number()
 });
 
 export const lineItem = Joi.object().keys({
@@ -30,9 +31,11 @@ export const lineItem = Joi.object().keys({
   cpu: Joi.number().required(),
   size: Joi.number(),
   quantity: Joi.number().min(0).max(100000).allow(''),
+  weight: Joi.number(),
   tester: Joi.object().keys({
     quantity: Joi.number().min(0).max(100000).allow(''),
-    cpu: Joi.number().min(0).max(1000)
+    cpu: Joi.number().min(0).max(1000),
+    weight: Joi.number()
   })
 });
 
