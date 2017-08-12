@@ -39,6 +39,8 @@ export default class CaseRepository {
               sku: sku,
               tester: { cpu: row.testercpu, weight: row.testerweight }
             });
+          } else if (row.deleted && row.productname) {
+            logger.info(`Skipping deleted product: ${row.productname}`);
           } else {
             logger.warn(`Skipping row with this data: ${JSON.stringify(row)}`);
           }
