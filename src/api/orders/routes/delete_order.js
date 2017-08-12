@@ -1,7 +1,7 @@
 import Boom from 'boom';
 import Joi from 'joi';
 import logger from '../../../logger';
-import OrderService from '../../../service/OrderService';
+import DbOrderService from '../../../service/DbOrderService';
 
 export default () => ({
   method: 'DELETE',
@@ -20,7 +20,7 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    const service = new OrderService();
+    const service = new DbOrderService();
     logger.warn('deleting order: ', req.params.id);
     service.deleteOrder(req.params.id)
       .then(() => reply({ id: req.params.id }))

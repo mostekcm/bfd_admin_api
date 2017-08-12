@@ -2,7 +2,7 @@ import Boom from 'boom';
 import Joi from 'joi';
 import patchOrderSchema from '../schemas/patch_order';
 import logger from '../../../logger';
-import OrderService from '../../../service/OrderService';
+import DbOrderService from '../../../service/DbOrderService';
 
 export default () => ({
   method: 'PATCH',
@@ -22,7 +22,7 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    const service = new OrderService();
+    const service = new DbOrderService();
     const newOrderAttributes = req.payload;
     logger.info('patching order: ', JSON.stringify(newOrderAttributes));
     service.patchOrder(req.params.id, newOrderAttributes)

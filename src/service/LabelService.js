@@ -1,10 +1,13 @@
 import GoogleSpreadsheet from 'google-spreadsheet';
 import Promise from 'bluebird';
+import moment from 'moment';
 
 import config from '../config';
 import logger from '../logger';
 import LabelRepository from '../models/LabelRepository';
 
+let labelRepo = null;
+let lastUpdate = null;
 export default class LabelService {
   constructor() {
     /* Grab labels from the google sheet */
@@ -19,7 +22,13 @@ export default class LabelService {
 
   getAll() {
     const me = this;
-    if (this.labelRepo != null) return new Promise(resolve => resolve(this.labelRepo.getAll()));
+    const cacheAge = lastUpdate ? moment().unix() - lastUpdate : 0;
+    if (labelRepo !== null && cacheAge < 60) {
+      logger.debug('Using label cache because cacheAge: ', cacheAge);
+      return new Promise(resolve => resolve(labelRepo.getAll()));
+    }
+
+    if (labelRepo !== null) logger.info('Updating label cache: ', cacheAge);
 
     return this.useServiceAccountAuth(JSON.parse(config('BFD_SERVICE_ACCOUNT_CREDS')))
       .then(() => me.getInfo())
@@ -39,9 +48,10 @@ export default class LabelService {
         }
 
         return LabelRepository.createFromSheets(labelsSheet, labelUseSheet)
-          .then((labelRepo) => {
-            me.labelRepo = labelRepo;
-            return labelRepo.getAll();
+          .then((labelRepoInstance) => {
+            lastUpdate = moment().unix();
+            labelRepo = labelRepoInstance;
+            return labelRepoInstance.getAll();
           })
           .catch(err => Promise.reject(err));
       });

@@ -1,5 +1,6 @@
 import getCases from './api/cases/routes/get_cases';
 import getDisplays from './api/displays/routes/get_displays';
+import moveToMongo from './api/orders/routes/move_to_mongo';
 import getOrders from './api/orders/routes/get_orders';
 import getOrder from './api/orders/routes/get_order';
 import postOrder from './api/orders/routes/post_order';
@@ -15,6 +16,7 @@ const register = (server, options, next) => {
   server.route(getDisplays(server));
   server.route(getOrders(server));
   server.route(getOrder(server));
+  server.route(moveToMongo(server));
   server.route(postOrder(server));
   server.route(patchOrder(server));
   server.route(deleteOrder(server));

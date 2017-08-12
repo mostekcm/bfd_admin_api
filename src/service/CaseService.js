@@ -1,10 +1,14 @@
 import GoogleSpreadsheet from 'google-spreadsheet';
 import Promise from 'bluebird';
+import moment from 'moment';
 
 import config from '../config';
 import logger from '../logger';
 import CaseRepository from '../models/CaseRepository';
 import SkuRepository from '../models/SkuRepository';
+
+let caseRepo = null;
+let lastUpdate = null;
 
 export default class CaseService {
   constructor() {
@@ -15,12 +19,17 @@ export default class CaseService {
     this.doc = new GoogleSpreadsheet(config('CONFIG_SHEET'));
     this.useServiceAccountAuth = Promise.promisify(this.doc.useServiceAccountAuth, { context: this.doc });
     this.getInfo = Promise.promisify(this.doc.getInfo, { context: this.doc });
-    this.caseRepo = null;
   }
 
   getAll() {
     const me = this;
-    if (this.caseRepo != null) return new Promise(resolve => resolve(this.caseRepo.getAll()));
+    const cacheAge = lastUpdate ? moment().unix() - lastUpdate : 0;
+    if (caseRepo !== null && cacheAge < 60) {
+      logger.debug('Using cache because cacheAge: ', cacheAge);
+      return new Promise(resolve => resolve(caseRepo.getAll()));
+    }
+
+    if (caseRepo !== null) logger.info('Updating case cache: ', cacheAge);
 
     return this.useServiceAccountAuth(JSON.parse(config('BFD_SERVICE_ACCOUNT_CREDS')))
       .then(() => me.getInfo())
@@ -41,9 +50,10 @@ export default class CaseService {
 
         return SkuRepository.create(skusSheet)
           .then(skuRepo => CaseRepository.createFromSheet(casesSheet, skuRepo))
-          .then((caseRepo) => {
-            me.caseRepo = caseRepo;
-            return caseRepo.getAll();
+          .then((caseRepoInstance) => {
+            lastUpdate = moment().unix();
+            caseRepo = caseRepoInstance;
+            return caseRepoInstance.getAll();
           })
           .catch(err => Promise.reject(err));
       });

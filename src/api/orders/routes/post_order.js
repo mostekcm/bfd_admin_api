@@ -1,7 +1,7 @@
 import Boom from 'boom';
 import orderSchema from '../schemas/order';
 import logger from '../../../logger';
-import OrderService from '../../../service/OrderService';
+import DbOrderService from '../../../service/DbOrderService';
 
 export default () => ({
   method: 'POST',
@@ -18,7 +18,7 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    const service = new OrderService();
+    const service = new DbOrderService();
     const order = req.payload;
     logger.info('adding new order: ', JSON.stringify(order));
     service.addOrder(order)

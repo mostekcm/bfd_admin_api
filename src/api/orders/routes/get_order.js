@@ -1,7 +1,7 @@
 import Joi from 'joi';
 
 import logger from '../../../logger';
-import OrderService from '../../../service/OrderService';
+import DbOrderService from '../../../service/DbOrderService';
 
 export default () => ({
   method: 'GET',
@@ -20,7 +20,7 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    const orderService = new OrderService();
+    const orderService = new DbOrderService();
     orderService.getOrder(req.params.id)
       .then(order => reply(order))
       .catch((e) => {

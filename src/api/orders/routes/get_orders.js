@@ -1,7 +1,6 @@
-import _ from 'lodash';
 import Joi from 'joi';
 import logger from '../../../logger';
-import OrderService from '../../../service/OrderService';
+import DbOrderService from '../../../service/DbOrderService';
 
 export default () => ({
   method: 'GET',
@@ -21,10 +20,10 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    logger.debug('Getting orders');
-    const orderService = new OrderService();
-    orderService.getAllNotCancelled()
-      .then(orders => reply(_.values(orders)))
+    logger.debug('Getting orders with query: ', req.query.search);
+    const orderService = new DbOrderService();
+    orderService.getAllNotCancelled(req.query.search)
+      .then(orders => reply(orders))
       .catch((e) => {
         if (e.message) {
           logger.error('Error trying to get orders data: ', e.message);
