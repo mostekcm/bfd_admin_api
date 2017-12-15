@@ -21,10 +21,8 @@
   "repository": "github:mostekcm/bfd_admin_api",
   "dependencies": {
     "async": "^2.1.5",
-    "babel-cli": "^6.23.0",
-    "babel-preset-es2015": "^6.22.0",
-    "babel-preset-react": "^6.23.0",
-    "babel-register": "^6.23.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-register": "^6.26.0",
     "bluebird": "^3.4.7",
     "boom": "^4.2.0",
     "cors": "^2.8.1",
