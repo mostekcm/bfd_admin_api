@@ -4,7 +4,7 @@
   "description": "Backend API for the BFD admin site",
   "main": "index.js",
   "scripts": {
-    "build": "babel src -d lib",
+    "build": "echo 'skip babel' || babel src -d lib",
     "serve": "npm run lint:js && npm run build && node ./index.js",
     "start": "npm run serve",
     "lint:js": "eslint --ignore-path .gitignore --ignore-pattern webpack --ignore-pattern lib .",

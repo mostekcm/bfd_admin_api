@@ -3,5 +3,6 @@
  */
 
 var path = require('path');
+require('babel-register');
 
-require(path.join(path.join(__dirname, 'lib'), 'index')); // eslint-disable-line import/no-dynamic-require
+require(path.join(path.join(__dirname, 'src'), 'index')); // eslint-disable-line import/no-dynamic-require

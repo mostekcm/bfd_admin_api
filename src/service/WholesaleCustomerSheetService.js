@@ -41,9 +41,9 @@ export default class WholesaleCustomerSheetService {
   }
 
   static isValueChanged(row, crmStoreInfo, column, attr) {
-    const value = _.get(crmStoreInfo, attr);
-    if (column === 'mostrecentorder') logger.debug('carlos: bad value: ', value);
-    if (row[column] !== value) {
+    let value = _.get(crmStoreInfo, attr);
+    if (_.isNumber(value)) value = Math.round(value * 100) / 100;
+    if (row[column].toString() !== value.toString()) {
       logger.info(`Changing ${column} (${row[column]}) to ${attr} (${value})`);
       row[column] = value;
       return true;
@@ -110,6 +110,10 @@ export default class WholesaleCustomerSheetService {
           .then((rows) => {
             const promises = [];
             stats.totalStores = rows.length;
+            const columnWhiteList = [
+              'storename', 'contactname', 'storeemail', 'storephone', 'save', 'del',
+              'storeaddress', 'numorders', 'totalrev', 'mostrecentorder', 'mostrecentshipment'
+            ];
             rows.forEach((row) => {
               const crmOrderRows = _.cloneDeep(orderByStoreName[row.storename]);
               if (!crmOrderRows) {
@@ -119,6 +123,11 @@ export default class WholesaleCustomerSheetService {
               }
 
               delete orderByStoreName[row.storename];
+
+              /* Delete extra columns in the row so we don't overwrite them */
+              Object.keys(row).forEach((columnName) => {
+                if (columnWhiteList.indexOf(columnName) < 0 && !columnName.startsWith('_')) delete row[columnName];
+              });
 
               const checkRowsWrapper = () => WholesaleCustomerSheetService.checkRows(row, crmOrderRows)
                 .then((updated) => {
