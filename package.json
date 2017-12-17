@@ -30,6 +30,7 @@
     "express": "^4.14.0",
     "express-jwt": "^5.1.0",
     "google-spreadsheet": "^2.0.3",
+    "googleapis": "^23.0.0",
     "hapi": "^16.1.0",
     "hapi-auth-jwt2": "^7.2.4",
     "hapi-cors": "^1.0.1",

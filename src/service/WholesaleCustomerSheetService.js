@@ -1,7 +1,7 @@
 import _ from 'lodash';
-import GoogleSpreadsheet from 'google-spreadsheet';
+import google from 'googleapis';
 import Promise from 'bluebird';
-import PromiseThrottle from 'promise-throttle';
+// import PromiseThrottle from 'promise-throttle';
 import moment from 'moment';
 
 import config from '../config';
@@ -13,48 +13,96 @@ export default class WholesaleCustomerSheetService {
     // TODO: Do caching for this
     // TODO: Move this to a provider pattern
     // spreadsheet key is the long id in the sheets URL
-    this.doc = new GoogleSpreadsheet(config('WHOLESALE_CUSTOMER_SHEET'));
-    this.useServiceAccountAuth = Promise.promisify(this.doc.useServiceAccountAuth, { context: this.doc });
-    this.getInfoFromDoc = Promise.promisify(this.doc.getInfo, { context: this.doc });
-    this.info = null;
+    this.sheets = google.sheets('v4');
+    this.spreadsheetId = config('WHOLESALE_CUSTOMER_SHEET');
+    this.sheetName = 'Customers';
+    this.get = Promise.promisify(this.sheets.spreadsheets.values.get, { context: this.sheets.spreadsheets.values });
+    this.ourFields = ['contactname', 'storeemail', 'storephone', 'storeaddress',
+      'numorders', 'totalrev', 'mostrecentorder', 'mostrecentshipment'];
+
+    this.headers = null;
+    this.jwtClient = null;
     this.authenticated = false;
   }
 
   authenticate() {
-    if (this.authenticated) return new Promise(resolve => resolve());
+    if (this.jwtClient) return new Promise.resolve(this.jwtClient);
 
     const me = this;
     const precreds = config('BFD_SERVICE_ACCOUNT_CREDS');
     const creds = JSON.parse(precreds);
-    return this.useServiceAccountAuth(creds)
+    const jwtClient = new google.auth.JWT(
+      creds.client_email,
+      null,
+      creds.private_key,
+      ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive'], // an array of auth
+      // scopes
+      null
+    );
+
+    const authorize = Promise.promisify(jwtClient.authorize, { context: jwtClient });
+    return authorize()
       .then(() => {
-        me.authenticated = true;
+        me.jwtClient = jwtClient;
         return true;
       });
   }
 
-  getInfo() {
-    const me = this;
-    if (this.info !== null) return new Promise(resolve => resolve(this.info));
-    return this.authenticate()
-      .then(() => me.getInfoFromDoc());
+  static getCharacterFromIndex(index) {
+    return String.fromCharCode('A'.charCodeAt(0) + index);
   }
 
-  static isValueChanged(row, crmStoreInfo, column, attr) {
+  static getColumnValueFromIndex(index) {
+    if (index > 25) {
+      return this.getCharacterFromIndex(Math.floor(index / 26)) + this.getCharacterFromIndex(index % 26);
+    }
+    return this.getCharacterFromIndex(index);
+  }
+
+  getHeader() {
+    if (this.headers) return Promise.resolve(this.headers);
+
+    const me = this;
+
+    return this.authenticate()
+      .then(() => me.get({
+        auth: this.jwtClient,
+        spreadsheetId: this.spreadsheetId,
+        range: 'Customers!A1:ZZZ1'
+      }))
+      .then((data) => {
+        me.headers = {};
+        data.values[0].map((columnName, index) => {
+          me.headers[columnName] = { index, column: WholesaleCustomerSheetService.getColumnValueFromIndex(index) };
+          return me.headers;
+        });
+        return me.headers;
+      });
+  }
+
+  getUpdateData(rowNumber, columnHeader, value) {
+    return {
+      range: `${this.sheetName}!${this.headers[columnHeader].column}${rowNumber}`,
+      values: [[value]]
+    };
+  }
+
+  changeCell(row, rowNumber, data, crmStoreInfo, columnHeader, attr) {
+    const headerInfo = this.headers[columnHeader];
+    const index = headerInfo.index;
     let value = _.get(crmStoreInfo, attr);
     if (_.isNumber(value)) value = Math.round(value * 100) / 100;
-    if (row[column].toString() !== value.toString()) {
-      logger.info(`Changing ${column} (${row[column]}) to ${attr} (${value})`);
-      row[column] = value;
+    const oldValue = row[index];
+    if (!oldValue || oldValue.toString() !== value.toString()) {
+      logger.info(`Changing ${columnHeader} (${oldValue}) to ${attr} (${value})`);
+      data.push(this.getUpdateData(rowNumber, columnHeader, value));
       return true;
     }
 
     return false;
   }
 
-  static checkRows(row, crmStoreInfoRows) {
-    let valueChanged = false;
-
+  checkRows(row, rowNumber, crmStoreInfoRows, data) {
     const crmStoreInfo = crmStoreInfoRows[0];
     crmStoreInfo.totalRev = _.sumBy(crmStoreInfoRows, 'totals.total');
     crmStoreInfo.numOrders = crmStoreInfoRows.length;
@@ -63,82 +111,74 @@ export default class WholesaleCustomerSheetService {
     crmStoreInfo.mostRecentOrderDate = (maxDate && moment.unix(maxDate.date).format('L')) || '';
     crmStoreInfo.mostRecentShipment = (maxShippedDate && moment.unix(maxShippedDate.shippedDate).format('L')) || '';
 
-    valueChanged = WholesaleCustomerSheetService.isValueChanged(row, crmStoreInfo, 'contactname', 'store.contact') || valueChanged;
-    valueChanged = WholesaleCustomerSheetService.isValueChanged(row, crmStoreInfo, 'storeemail', 'store.email') || valueChanged;
-    valueChanged = WholesaleCustomerSheetService.isValueChanged(row, crmStoreInfo, 'storephone', 'store.phone') || valueChanged;
-    valueChanged = WholesaleCustomerSheetService.isValueChanged(row, crmStoreInfo, 'storeaddress', 'store.shippingAddress') || valueChanged;
-    valueChanged = WholesaleCustomerSheetService.isValueChanged(row, crmStoreInfo, 'numorders', 'numOrders') || valueChanged;
-    valueChanged = WholesaleCustomerSheetService.isValueChanged(row, crmStoreInfo, 'totalrev', 'totalRev') || valueChanged;
-    valueChanged = WholesaleCustomerSheetService.isValueChanged(row, crmStoreInfo, 'mostrecentorder', 'mostRecentOrderDate') || valueChanged;
-    valueChanged = WholesaleCustomerSheetService.isValueChanged(row, crmStoreInfo, 'mostrecentshipment', 'mostRecentShipment') || valueChanged;
+    let isChanged = this.changeCell(row, rowNumber, data, crmStoreInfo, 'contactname', 'store.contact');
+    isChanged = this.changeCell(row, rowNumber, data, crmStoreInfo, 'storeemail', 'store.email') || isChanged;
+    isChanged = this.changeCell(row, rowNumber, data, crmStoreInfo, 'storephone', 'store.phone') || isChanged;
+    isChanged = this.changeCell(row, rowNumber, data, crmStoreInfo, 'storeaddress', 'store.shippingAddress') || isChanged;
+    isChanged = this.changeCell(row, rowNumber, data, crmStoreInfo, 'numorders', 'numOrders') || isChanged;
+    isChanged = this.changeCell(row, rowNumber, data, crmStoreInfo, 'totalrev', 'totalRev') || isChanged;
+    isChanged = this.changeCell(row, rowNumber, data, crmStoreInfo, 'mostrecentorder', 'mostRecentOrderDate') || isChanged;
+    isChanged = this.changeCell(row, rowNumber, data, crmStoreInfo, 'mostrecentshipment', 'mostRecentShipment') || isChanged;
 
-    const save = Promise.promisify(row.save, { context: row });
+    return isChanged;
+  }
 
-    if (valueChanged) return save().then(() => true);
-
-    return Promise.resolve(false);
+  createNewRow(newRow, rowNumber, data) {
+    Object.keys(newRow).forEach(columnHeader => data.push(this.getUpdateData(rowNumber, columnHeader, newRow[columnHeader])));
   }
 
   syncFromOrders(orders) {
-    return this.getInfo()
-      .then((info) => {
-        logger.debug('Loaded Info for Wholesale Customer Workbook');
+    return this.getHeader()
+      .then((headers) => {
+        logger.debug('Loaded Info for Wholesale Customer Workbook here are the headers: ', headers);
 
-        // first find the write worksheet
-        const existingCustomerSheet = _.find(info.worksheets, worksheet => worksheet.title === 'Customers');
-
-        if (!existingCustomerSheet) return Promise.reject(new Error('Could not find the customers sheet: ' + info.worksheets.length()));
-
-        const orderByStoreName = _.groupBy(orders, order => order.store.name);
-
-        const getRows = Promise.promisify(existingCustomerSheet.getRows, { context: existingCustomerSheet });
-
-        const stats = {
-          updated: 0,
-          new: 0,
-          zeroOrders: 0,
-          totalStores: 0,
-          skipped: 0
-        };
-
-        const promiseThrottle = new PromiseThrottle({
-          requestsPerSecond: 5, // per second
-          promiseImplementation: Promise
+        // first find the data max column for all fields we care about
+        let maxColumn = headers.contactname;
+        const ourFields = this.ourFields;
+        ourFields.forEach((columnName) => {
+          const headerInfo = headers[columnName];
+          if (headerInfo.index > maxColumn.index) maxColumn = headerInfo;
+          return maxColumn; // to quiet lint
         });
 
-        return getRows()
-          .then((rows) => {
-            const promises = [];
+        const query = `${this.sheetName}!A2:${maxColumn.column}`;
+
+        return this.get({
+          auth: this.jwtClient,
+          spreadsheetId: this.spreadsheetId,
+          range: query
+        })
+          .then((data) => {
+            const updateObject = { data: [] };
+            const rows = data.values;
+            const stats = {
+              updated: 0,
+              new: 0,
+              zeroOrders: 0,
+              totalStores: 0,
+              skipped: 0
+            };
+
             stats.totalStores = rows.length;
-            const columnWhiteList = [
-              'storename', 'contactname', 'storeemail', 'storephone', 'save', 'del',
-              'storeaddress', 'numorders', 'totalrev', 'mostrecentorder', 'mostrecentshipment'
-            ];
-            rows.forEach((row) => {
-              const crmOrderRows = _.cloneDeep(orderByStoreName[row.storename]);
+
+            const orderByStoreName = _.groupBy(orders, order => order.store.name);
+
+            rows.map((row, rowNumber) => {
+              const storeName = row[headers.storename.index];
+              const crmOrderRows = _.cloneDeep(orderByStoreName[storeName]);
               if (!crmOrderRows) {
-                logger.info(`Missing store from orders: ${row.storename}`);
+                logger.info(`Missing store from orders: ${storeName}`);
                 stats.zeroOrders += 1;
-                return;
+                return stats;
               }
 
-              delete orderByStoreName[row.storename];
+              delete orderByStoreName[storeName];
 
-              /* Delete extra columns in the row so we don't overwrite them */
-              Object.keys(row).forEach((columnName) => {
-                if (columnWhiteList.indexOf(columnName) < 0 && !columnName.startsWith('_')) delete row[columnName];
-              });
-
-              const checkRowsWrapper = () => WholesaleCustomerSheetService.checkRows(row, crmOrderRows)
-                .then((updated) => {
-                  stats.updated += updated ? 1 : 0;
-                  return stats;
-                });
-
-              promises.push(promiseThrottle.add(checkRowsWrapper.bind(this)));
+              if (this.checkRows(row, rowNumber + 2, crmOrderRows, updateObject.data)) stats.updated += 1;
+              return stats;
             });
 
-            Object.keys(orderByStoreName).forEach((storeName) => {
+            Object.keys(orderByStoreName).map((storeName, rowOffset) => {
               const crmStoreInfoRows = _.cloneDeep(orderByStoreName[storeName]);
               const crmStoreInfo = crmStoreInfoRows[0];
               crmStoreInfo.totalRev = _.sumBy(crmStoreInfoRows, 'totals.total');
@@ -159,27 +199,30 @@ export default class WholesaleCustomerSheetService {
                 mostrecentshipment: _.get(crmStoreInfo, 'mostRecentShipment')
               };
 
-              const addRow = Promise.promisify(existingCustomerSheet.addRow, { context: existingCustomerSheet });
+              if (crmStoreInfo.pendingApproval) {
+                logger.info('Skipping pending store: ', newCrmOrderRow.storename);
+                stats.skipped += 1;
+              } else {
+                this.createNewRow(newCrmOrderRow, rows.length + rowOffset + 2, updateObject.data);
+                logger.info('new row: ', newCrmOrderRow);
+                stats.new += 1;
+              }
 
-              const addRowWrapper = () => {
-                if (crmStoreInfo.pendingApproval) {
-                  logger.info('Skipping pending store: ', newCrmOrderRow.storename);
-                  stats.skipped += 1;
-                  return Promise.resolve(stats);
-                }
-                return addRow(newCrmOrderRow)
-                  .then(() => {
-                    logger.info('new row: ', newCrmOrderRow);
-                    stats.new += 1;
-                    return stats;
-                  });
-              };
-
-              promises.push(promiseThrottle.add(addRowWrapper.bind(this)));
+              return stats;
             });
 
-            return Promise.all(promises)
-              .then(() => logger.info('Sync Stats: ', stats))
+            const bulkUpdate = Promise.promisify(this.sheets.spreadsheets.values.batchUpdate, { context: this.sheets.spreadsheets.values });
+
+            const options = {
+              auth: this.jwtClient,
+              spreadsheetId: this.spreadsheetId,
+              resource: {
+                valueInputOption: 'RAW',
+                data: updateObject.data
+              }
+            };
+            return bulkUpdate(options)
+              .then(result => logger.info('Sync Stats: ', stats, 'result: ', result))
               .then(() => stats);
           });
       });
