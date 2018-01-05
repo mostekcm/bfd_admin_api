@@ -9,6 +9,8 @@ import deleteOrder from './api/orders/routes/delete_order';
 import getCommissionDueReport from './api/reports/routes/get_commission_due';
 import getShowReport from './api/reports/routes/get_show';
 import getMonthReport from './api/reports/routes/get_month';
+import getPaymentsReport from './api/reports/routes/get_payments';
+import getShipmentsReport from './api/reports/routes/get_shipments';
 import getLabelUses from './api/labels/routes/get_label_uses';
 import syncWholesaleCustomerSheet from './api/crm/routes/post_sync_wholesale_customer_sheet';
 
@@ -24,6 +26,8 @@ const register = (server, options, next) => {
   server.route(getCommissionDueReport(server));
   server.route(getShowReport(server));
   server.route(getMonthReport(server));
+  server.route(getPaymentsReport(server));
+  server.route(getShipmentsReport(server));
   server.route(getLabelUses(server));
   server.route(syncWholesaleCustomerSheet(server));
   next();

@@ -134,6 +134,38 @@ export default class DbOrderService {
     });
   }
 
+  getFromShipmentDateRange(startDate, endDate) {
+    const startTime = moment(startDate).unix();
+    const endTime = moment(endDate).unix();
+
+    return this.getAllNotCancelled({
+      $or: [
+        {
+          shippedDate: { $exists: true, $gte: startTime, $lt: endTime }
+        },
+        {
+          shippedDate: { $exists: true, $gte: `${startTime}`, $lt: `${endTime}` }
+        }
+      ]
+    });
+  }
+
+  getFromPaymentDateRange(startDate, endDate) {
+    const startTime = moment(startDate).unix();
+    const endTime = moment(endDate).unix();
+
+    return this.getAllNotCancelled({
+      $or: [
+        {
+          'payments.date': { $exists: true, $gte: startTime, $lt: endTime }
+        },
+        {
+          'payments.date': { $exists: true, $gte: `${startTime}`, $lt: `${endTime}` }
+        }
+      ]
+    });
+  }
+
   getPendingCommissionOrders() {
     return this.getAllNotCancelled({
       $nor: [{ payments: { $exists: false } }, { payments: { $size: 0 } }],
