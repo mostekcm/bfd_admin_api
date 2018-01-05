@@ -16,7 +16,8 @@ export default Joi.object().keys({
   payments: Joi.array().items(payment),
   commissions: Joi.array().items(commission),
   shipping: Joi.number().min(0).max(10000),
-  shippedDate: Joi.number().min(0)
+  shippedDate: Joi.number().min(0),
+  targetShipDate: Joi.number().min(0)
 }).or(
   'store',
   'date',
@@ -32,4 +33,5 @@ export default Joi.object().keys({
   'commissions',
   'dueDate',
   'shipping',
-  'shippedDate');
+  'shippedDate',
+  'targetShipDate');
