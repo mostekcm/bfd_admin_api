@@ -138,7 +138,7 @@ export default class DbOrderService {
     const endTime = moment().add(1, 'M').unix();
     return this.getAllNotCancelled({
       targetShipDate: { $exists: true, $lt: endTime },
-      shippedDate: { $exists: false }
+      dealStage: 'Approved'
     });
   }
 
@@ -150,7 +150,7 @@ export default class DbOrderService {
 
     return this.getAllNotCancelled({
       targetShipDate: { $exists: true, $gte: startTime, $lt: endTime },
-      shippedDate: { $exists: false }
+      dealStage: 'Approved'
     });
   }
 
