@@ -1,0 +1,3 @@
+export const STATE_COOKIE_NAME = 'HUBSPOT_STATE_COOKIE_NAME';
+
+export default STATE_COOKIE_NAME;

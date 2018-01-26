@@ -45,6 +45,7 @@
     "promise-throttle": "^0.3.1",
     "request": "^2.78.0",
     "sprintf-js": "^1.0.3",
+    "superagent": "^3.8.2",
     "uuid": "^3.0.1",
     "winston": "^2.3.1"
   },

@@ -20,6 +20,8 @@ export default class DbOrderService {
     this.db = null;
     this.casesIndex = null;
     this.displays = null;
+
+    this.allowedDealStages = ['Qualifying', 'Pending Approval', 'Approved', 'Closed Won', 'Closed Lost'];
   }
 
   getDb() {
@@ -80,11 +82,18 @@ export default class DbOrderService {
           order.invoiceNumber = invoiceNumber;
           order.dueDate = order.dueDate || defaultTargetDate;
           order.targetShipDate = order.targetShipDate || defaultTargetDate;
+          order.dealStage = order.dealStage || 'Pending Approval';
+
+          if (this.allowedDealStages.indexOf(order.dealStage) < 0) {
+            logger.warn(`Bad deal stage for order ${invoiceNumber}: ${order.dealStage}; Not one of: ${this.allowedDealStages.join(', ')}`);
+            order.dealStage = 'Pending Approval';
+          }
 
           return orders.insertOne(order)
             .then(() => {
-              order.totals = orderHelper.orderTotals(order, this.casesIndex, this.displays);
               logger.debug(`inserted new order: ${JSON.stringify(order)}`);
+              // TODO: Push deal to hubSpo
+              order.totals = orderHelper.orderTotals(order, this.casesIndex, this.displays);
               return order;
             });
         })
@@ -92,8 +101,19 @@ export default class DbOrderService {
   }
 
   patchOrder(id, newOrderAttributes) {
+    if (newOrderAttributes.shippedDate) {
+      newOrderAttributes.dealStage = 'Closed Won';
+    }
+
     return this.getOrdersCollection()
-      .then(orders => orders.updateOne({ id }, { $set: newOrderAttributes }));
+      .then(orders => orders.updateOne({ id }, { $set: newOrderAttributes }))
+      .then((retVal) => {
+        if (newOrderAttributes.dealStage) {
+          // TODO: Push deal to hubSpot
+        }
+
+        return retVal;
+      });
   }
 
   deleteOrder(id) {

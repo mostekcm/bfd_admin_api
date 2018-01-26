@@ -12,7 +12,11 @@ import getMonthReport from './api/reports/routes/get_month';
 import getPaymentsReport from './api/reports/routes/get_payments';
 import getShipmentsReport from './api/reports/routes/get_shipments';
 import getLabelUses from './api/labels/routes/get_label_uses';
+
+// CRM
 import syncWholesaleCustomerSheet from './api/crm/routes/post_sync_wholesale_customer_sheet';
+import crmAuthorizeCallback from './api/crm/routes/post_authorize_callback';
+import crmAuthorizeHubspot from './api/crm/routes/get_authorize_hubspot';
 
 const register = (server, options, next) => {
   server.route(getCases(server));
@@ -29,7 +33,11 @@ const register = (server, options, next) => {
   server.route(getPaymentsReport(server));
   server.route(getShipmentsReport(server));
   server.route(getLabelUses(server));
+  // CRM
   server.route(syncWholesaleCustomerSheet(server));
+  server.route(crmAuthorizeCallback(server));
+  server.route(crmAuthorizeHubspot(server));
+
   next();
 };
 

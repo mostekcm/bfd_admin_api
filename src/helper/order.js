@@ -19,6 +19,10 @@ export const getCommissionInfo = (order, commissionBase) => {
     commissionMultiplier = order.show.name === 'Reorder' ? 0.07 : 0;
   }
 
+  if (order.salesRep.name === 'Brooke Davis') {
+    commissionMultiplier = 0;
+  }
+
   const commission = commissionBase * commissionMultiplier;
   const jes = (commissionBase * 0.2) - commission;
 

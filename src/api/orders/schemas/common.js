@@ -57,10 +57,10 @@ export const displayItem = Joi.object().keys({
 
 export const store = Joi.object().keys({
   name: Joi.string().max(500).required(),
-  shippingAddress: Joi.string().max(500).required(),
-  phone: Joi.string().max(15).required(),
-  email: Joi.string().max(100).required(),
-  contact: Joi.string().max(100).required(),
+  shippingAddress: Joi.string().max(500).allow(''),
+  phone: Joi.string().max(30).allow(''),
+  email: Joi.string().max(100).allow(''),
+  contact: Joi.string().max(100).allow(''),
   billingAddress: Joi.string().max(500).allow('')
 });
 
