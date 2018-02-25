@@ -1,4 +1,5 @@
 import getCases from './api/cases/routes/get_cases';
+import getCompanies from './api/companies/routes/get_companies';
 import getDisplays from './api/displays/routes/get_displays';
 import moveToMongo from './api/orders/routes/move_to_mongo';
 import getOrders from './api/orders/routes/get_orders';
@@ -20,6 +21,7 @@ import crmAuthorizeHubspot from './api/crm/routes/get_authorize_hubspot';
 
 const register = (server, options, next) => {
   server.route(getCases(server));
+  server.route(getCompanies(server));
   server.route(getDisplays(server));
   server.route(getOrders(server));
   server.route(getOrder(server));
