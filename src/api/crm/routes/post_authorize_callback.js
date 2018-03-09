@@ -1,5 +1,6 @@
 import request from 'superagent';
 import Joi from 'joi';
+import Boom from 'boom';
 
 import config from '../../../config';
 import logger from '../../../logger';
@@ -43,11 +44,7 @@ export default () => ({
       })
       .catch((err, res) => {
         logger.error('Bad request for tokens: ', err, res.body);
-        reply({
-          status: 500,
-          error: 'Internal Server Error',
-          message: 'internal error occurred'
-        });
+        return reply(Boom.wrap(err));
       });
   }
 });

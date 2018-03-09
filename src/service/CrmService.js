@@ -14,6 +14,15 @@ export default class CrmService {
     this.db = null;
   }
 
+  static mapHubSpotToBfd(companies) {
+    return _(companies)
+      .map(company => _.assign({},
+        { id: company.companyId },
+        _.mapValues(company.properties, 'value')))
+      .sortBy('name')
+      .value();
+  }
+
   getDb() {
     if (this.db !== null) {
       logger.debug('Using cached db');
@@ -86,8 +95,8 @@ export default class CrmService {
   getCompanies(id) {
     return this.getAccessToken(id)
       .then(accessToken => request
-        .get('https://api.hubapi.com/companies/v2/companies/paged?properties=address&properties=name&properties=state&properties=city')
+        .get('https://api.hubapi.com/companies/v2/companies/paged?properties=name')
         .set('Authorization', `Bearer ${accessToken}`)
-        .then(response => response.body.companies));
+        .then(response => CrmService.mapHubSpotToBfd(response.body.companies)));
   }
 }

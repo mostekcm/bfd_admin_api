@@ -56,6 +56,7 @@ export const displayItem = Joi.object().keys({
 });
 
 export const store = Joi.object().keys({
+  id: Joi.number().min(100000000).max(100000000000),
   name: Joi.string().max(500).required(),
   shippingAddress: Joi.string().max(500).allow(''),
   phone: Joi.string().max(30).allow(''),

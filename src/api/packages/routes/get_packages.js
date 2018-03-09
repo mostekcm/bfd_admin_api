@@ -3,17 +3,17 @@ import Joi from 'joi';
 import Boom from 'boom';
 import logger from '../../../logger';
 
-import CaseService from '../../../service/CaseService';
+import PackageService from '../../../service/PackageService';
 
 export default () => ({
   method: 'GET',
-  path: '/api/cases',
+  path: '/api/packages',
   config: {
     auth: {
       strategies: ['jwt'],
       scope: ['read:cases']
     },
-    description: 'Get all cases in the system.',
+    description: 'Get all packages in the system.',
     tags: ['api'],
     validate: {
       query: {
@@ -23,12 +23,12 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    const caseService = new CaseService();
-    caseService.getAll()
-      .then(cases => reply(cases))
+    const packageService = new PackageService();
+    packageService.getAll()
+      .then(packages => reply(packages))
       .catch((e) => {
         if (e.message) {
-          logger.error('Error trying to get cases data: ', e.message);
+          logger.error('Error trying to get packages data: ', e.message);
           logger.error(e.stack);
         } else {
           logger.error(e);

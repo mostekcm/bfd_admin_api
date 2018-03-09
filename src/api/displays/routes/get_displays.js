@@ -1,5 +1,6 @@
 // import _ from 'lodash';
 import Joi from 'joi';
+import Boom from 'boom';
 import logger from '../../../logger';
 
 import DisplayService from '../../../service/DisplayService';
@@ -33,11 +34,7 @@ export default () => ({
           logger.error(e);
         }
 
-        return reply({
-          statusCode: 500,
-          error: 'Internal Configuration Error',
-          message: e.message ? e.message : e
-        });
+        return reply(Boom.wrap(e));
       });
   }
 });
