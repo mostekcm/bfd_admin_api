@@ -14,13 +14,51 @@ export default class CrmService {
     this.db = null;
   }
 
-  static mapHubSpotToBfd(companies) {
+  static mapHubSpotCompaniesToBfd(companies) {
     return _(companies)
-      .map(company => _.assign({},
-        { id: company.companyId },
-        _.mapValues(company.properties, 'value')))
+      .map(company => CrmService.mapHubSpotCompanyToBfd(company))
       .sortBy('name')
       .value();
+  }
+
+  static mapHubSpotContactPropertiesToInfo(contact) {
+    const properties = _.mapValues(contact.properties, 'value');
+    return {
+      id: contact.vid,
+      name: `${properties.firstname} ${properties.lastname}`,
+      phone: properties.phone,
+      email: properties.email
+    };
+  }
+
+  static mapHubSpotContactsToBfd(contacts, company) {
+    company.contacts = _(contacts)
+      .map(contact => CrmService.mapHubSpotContactPropertiesToInfo(contact))
+      .value();
+
+    return company;
+  }
+
+  static mapHupSpotPropertiesToStoreInfo(properties) {
+    const billingAddress = properties.billing_street_address ?
+      `${properties.billing_street_address}${properties.billing_street_address_2 ? ', ' + properties.billing_street_address_2 : ''}, ${properties.billing_city}, ${properties.billing_state}  ${properties.billing_postal_code}` :
+      undefined;
+
+    const shippingAddress = properties.address ?
+      `${properties.address}${properties.address2 ? ', ' + properties.address2 : ''}, ${properties.city}, ${properties.state}  ${properties.zip}` :
+      undefined;
+
+    return {
+      name: properties.name,
+      shippingAddress,
+      billingAddress
+    };
+  }
+
+  static mapHubSpotCompanyToBfd(company) {
+    return _.assign({},
+      { id: company.companyId },
+      CrmService.mapHupSpotPropertiesToStoreInfo(_.mapValues(company.properties, 'value')));
   }
 
   getDb() {
@@ -97,6 +135,35 @@ export default class CrmService {
       .then(accessToken => request
         .get('https://api.hubapi.com/companies/v2/companies/paged?properties=name')
         .set('Authorization', `Bearer ${accessToken}`)
-        .then(response => CrmService.mapHubSpotToBfd(response.body.companies)));
+        .then(response => CrmService.mapHubSpotCompaniesToBfd(response.body.companies)));
+  }
+
+  static getContactInfo(accessToken, company) {
+    return request
+      .get(`https://api.hubapi.com/companies/v2/companies/${company.id}/vids`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .then(response => Promise.map(response.body.vids, vid => request
+        .get(`https://api.hubapi.com/contacts/v1/contact/vid/${vid}/profile`)
+        .set('Authorization', `Bearer ${accessToken}`)))
+      .then(contacts => CrmService.mapHubSpotContactsToBfd(_.map(contacts, contact => contact.body), company));
+  }
+
+  getCompany(requestId, companyId) {
+    return this.getAccessToken(requestId)
+      .then(accessToken => request
+        .get(`https://api.hubapi.com/companies/v2/companies/${companyId}`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .then(response => CrmService.mapHubSpotCompanyToBfd(response.body))
+        .then(company => CrmService.getContactInfo(accessToken, company)));
+  }
+
+  getCompanyByName(requestId, companyName) {
+    return this.getCompanies(requestId)
+      .then(companies => _.find(companies, company => company.name === companyName))
+      .then((company) => {
+        if (!company) return company; // return early if not defined
+
+        return this.getCompany(requestId, company.id);
+      });
   }
 }

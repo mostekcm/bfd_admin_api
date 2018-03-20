@@ -116,6 +116,16 @@ export default class DbOrderService {
       });
   }
 
+  updateCompany(id, company) {
+    return this.getOrdersCollection()
+      .then(orders => orders.updateOne({ id }, {
+        $set: {
+          store: company
+        }
+      }))
+      .then(() => company);
+  }
+
   deleteOrder(id) {
     return this.getOrdersCollection()
       .then(orders => orders.removeOne({ id }));

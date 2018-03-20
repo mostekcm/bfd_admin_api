@@ -2,6 +2,7 @@ import Boom from 'boom';
 import orderSchema from '../schemas/order';
 import logger from '../../../logger';
 import DbOrderService from '../../../service/DbOrderService';
+import CrmService from '../../../service/CrmService';
 
 export default () => ({
   method: 'POST',
@@ -21,8 +22,16 @@ export default () => ({
     const service = new DbOrderService();
     const order = req.payload;
     logger.info('adding new order: ', JSON.stringify(order));
-    service.addOrder(order)
-      .then(newOrder => reply(newOrder))
+    const crmService = new CrmService();
+    const getCompanyPromise = order.store.id ? crmService.getCompany(req.auth.credentials.sub, order.store.id) :
+      Promise.resolve(order.store);
+
+    getCompanyPromise
+      .then((store) => {
+        order.store = store;
+        return service.addOrder(order)
+          .then(newOrder => reply(newOrder));
+      })
       .catch((e) => {
         logger.error(e.message);
         logger.error(e.message);
