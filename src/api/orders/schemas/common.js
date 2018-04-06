@@ -25,18 +25,20 @@ const sku = Joi.object().keys({
   weight: Joi.number()
 });
 
+export const tester = Joi.object().keys({
+  quantity: Joi.number().min(1).max(100000).allow(''),
+  cpu: Joi.number().min(0).max(1000),
+  weight: Joi.number()
+});
+
 export const lineItem = Joi.object().keys({
   sku: sku.required(),
   description: Joi.string().max(500).allow(''),
   cpu: Joi.number().required(),
   size: Joi.number(),
-  quantity: Joi.number().min(0).max(100000),
+  quantity: Joi.number().min(0).max(100000).required(),
   weight: Joi.number(),
-  tester: Joi.object().keys({
-    quantity: Joi.number().min(1).max(100000).allow(''),
-    cpu: Joi.number().min(0).max(1000),
-    weight: Joi.number()
-  })
+  tester
 });
 
 const offsetMerch = Joi.object().keys({
