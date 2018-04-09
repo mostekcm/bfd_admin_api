@@ -140,8 +140,19 @@ export default class DbOrderService {
       });
   }
 
-  getShowOrders(name) {
-    return this.getAllNotCancelled({ 'show.name': name });
+  getShowOrders(name, year) {
+    const showRangeMapping = {
+      'January Expo': '01-01',
+      'March Expo': '03-01',
+      'April Expo': '04-01',
+      'June Expo': '06-01',
+      'August Expo': '07-15',
+      'October Expo': '09-15'
+    };
+    const startDate = moment(`${year}-${showRangeMapping[name]}T00:00:00Z`).unix();
+    const endDate = moment(`${year + 1}-${showRangeMapping[name]}T00:00:00Z`).unix();
+
+    return this.getAllNotCancelled({ 'show.name': name, date: { $lt: endDate, $gte: startDate } });
   }
 
   getNextMonthOrders() {

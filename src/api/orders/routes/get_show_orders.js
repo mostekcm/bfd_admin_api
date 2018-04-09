@@ -1,0 +1,43 @@
+import moment from 'moment';
+import Joi from 'joi';
+
+import logger from '../../../logger';
+import DbOrderService from '../../../service/DbOrderService';
+
+export default () => ({
+  method: 'GET',
+  path: '/api/orders/show/{name}/{year}',
+  config: {
+    auth: {
+      strategies: ['jwt'],
+      scope: ['read:reports']
+    },
+    description: 'Get a report on a single show for max.',
+    tags: ['api'],
+    validate: {
+      params: {
+        name: Joi.string().max(100).required(),
+        year: Joi.number().min(2017).max(moment().year()).required()
+      }
+    }
+  },
+  handler: (req, reply) => {
+    const orderService = new DbOrderService();
+    orderService.getShowOrders(req.params.name, req.params.year)
+      .then(orders => reply(orders))
+      .catch((e) => {
+        if (e.message) {
+          logger.error('Error trying to get order data: ', e.message);
+          logger.error(e.stack);
+        } else {
+          logger.error(e);
+        }
+
+        return reply({
+          statusCode: 500,
+          error: 'Internal Configuration Error',
+          message: e.message ? e.message : e
+        });
+      });
+  }
+});
