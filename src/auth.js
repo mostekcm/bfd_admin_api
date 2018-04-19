@@ -25,7 +25,7 @@ const jwtOptions = {
 
   // Validate the audience and the issuer.
   verifyOptions: {
-    audience: 'https://bfd_admin.beautyfullday.com/api/v1',
+    audience: config('AUDIENCE'),
     issuer: `https://${config('AUTH0_DOMAIN')}/`,
     algorithms: ['RS256']
   }
