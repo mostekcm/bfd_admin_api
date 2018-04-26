@@ -15,5 +15,7 @@ export default Joi.object().keys({
   payments: Joi.array().items(payment),
   commissions: Joi.array().items(commission),
   shipping: Joi.number().min(0).max(10000),
+  targetShipDate: Joi.number().min(0),
+  shipAsap: Joi.boolean(),
   dealStage: Joi.string().max(20)
 });
