@@ -171,13 +171,14 @@ export default class OrderService {
         $set: {
           store: company
         }
-      }, { returnOriginal: false }))
-      .then(result => this.updateDeal(result.value)
-        .catch((err) => {
-          logger.error('Failed to update deal because: ', err);
-          return result.value;
-        }))
-      .then(() => company);
+      }, { returnOriginal: false })
+        .then(result => this.updateTotalsIfNeeded(orders, result.value))
+        .then(order => this.updateDeal(order)
+          .catch((err) => {
+            logger.error('Failed to update deal because: ', err);
+            return order;
+          }))
+        .then(() => company));
   }
 
   deleteOrder(id) {
