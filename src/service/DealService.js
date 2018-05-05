@@ -47,10 +47,6 @@ export default class DealService {
         value: order.dealStage
       },
       {
-        name: 'dealname',
-        value: `${order.invoiceNumber} for ${order.store.name}`
-      },
-      {
         name: 'amount',
         value: order.totals.total
       },
@@ -101,11 +97,17 @@ export default class DealService {
 
   createDeal(order) {
     return this.buildDeal(order)
-      .then(dealProperties => this.crmService.getAccessToken()
-        .then(accessToken => request
-          .post('https://api.hubapi.com/deals/v1/deal')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(dealProperties)))
+      .then((dealProperties) => {
+        dealProperties.properties.push({
+          name: 'dealname',
+          value: `${order.invoiceNumber} for ${order.store.name}`
+        });
+        return this.crmService.getAccessToken()
+          .then(accessToken => request
+            .post('https://api.hubapi.com/deals/v1/deal')
+            .set('Authorization', `Bearer ${accessToken}`)
+            .send(dealProperties));
+      })
       .then(response => response.body.dealId)
       .catch((err) => {
         logger.error(err);
