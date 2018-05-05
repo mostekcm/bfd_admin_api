@@ -167,11 +167,16 @@ export default class OrderService {
 
   updateCompany(id, company) {
     return this.getOrdersCollection()
-      .then(orders => orders.updateOne({ id }, {
+      .then(orders => orders.findOneAndUpdate({ id }, {
         $set: {
           store: company
         }
-      }))
+      }, { returnOriginal: false }))
+      .then(result => this.updateDeal(result.value)
+        .catch((err) => {
+          logger.error('Failed to update deal because: ', err);
+          return result.value;
+        }))
       .then(() => company);
   }
 
