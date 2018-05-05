@@ -1,7 +1,7 @@
 import Boom from 'boom';
 import orderSchema from '../schemas/order';
 import logger from '../../../logger';
-import DbOrderService from '../../../service/DbOrderService';
+import DbOrderService from '../../../service/OrderService';
 import CrmService from '../../../service/CrmService';
 
 export default () => ({
@@ -19,11 +19,11 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    const service = new DbOrderService();
+    const service = new DbOrderService(req.auth.credentials.sub);
     const order = req.payload;
     logger.info('adding new order: ', JSON.stringify(order));
-    const crmService = new CrmService();
-    const getCompanyPromise = order.store.id ? crmService.getCompany(req.auth.credentials.sub, order.store.id) :
+    const crmService = new CrmService(req.auth.credentials.sub);
+    const getCompanyPromise = order.store.id ? crmService.getCompany(order.store.id) :
       Promise.resolve(order.store);
 
     getCompanyPromise

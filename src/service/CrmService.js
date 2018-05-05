@@ -8,10 +8,11 @@ import logger from '../logger';
 import config from '../config';
 
 export default class CrmService {
-  constructor() {
+  constructor(adminId) {
     // TODO: Do caching for this
     // TODO: Move this to a provider pattern
     this.db = null;
+    this.adminId = adminId;
   }
 
   static mapHubSpotCompaniesToBfd(companies) {
@@ -80,19 +81,20 @@ export default class CrmService {
     return this.getDb().then(() => true);
   }
 
-  addTokens(id, tokens) {
+  addTokens(tokens) {
     return this.getDb()
       .then((db) => {
         const expiresAt = moment().unix() + tokens.expires_in;
         const hubSpot = db.collection('hubspot');
         return hubSpot.insertOne(_.assign({}, {
-          id,
+          id: this.adminId,
           expiresAt
         }, tokens));
       });
   }
 
-  getAccessToken(id) {
+  getAccessToken() {
+    const id = this.adminId;
     return this.getDb()
       .then((db) => {
         const hubSpot = db.collection('hubspot');
@@ -130,8 +132,8 @@ export default class CrmService {
       });
   }
 
-  getCompanies(id) {
-    return this.getAccessToken(id)
+  getCompanies() {
+    return this.getAccessToken()
       .then(accessToken => request
         .get('https://api.hubapi.com/companies/v2/companies/paged?properties=name')
         .set('Authorization', `Bearer ${accessToken}`)
@@ -148,8 +150,8 @@ export default class CrmService {
       .then(contacts => CrmService.mapHubSpotContactsToBfd(_.map(contacts, contact => contact.body), company));
   }
 
-  getCompany(requestId, companyId) {
-    return this.getAccessToken(requestId)
+  getCompany(companyId) {
+    return this.getAccessToken(this.adminId)
       .then(accessToken => request
         .get(`https://api.hubapi.com/companies/v2/companies/${companyId}`)
         .set('Authorization', `Bearer ${accessToken}`)
@@ -157,13 +159,17 @@ export default class CrmService {
         .then(company => CrmService.getContactInfo(accessToken, company)));
   }
 
-  getCompanyByName(requestId, companyName) {
-    return this.getCompanies(requestId)
-      .then(companies => _.find(companies, company => company.name === companyName))
+  getShortCompanyByName(companyName) {
+    return this.getCompanies()
+      .then(companies => _.find(companies, company => company.name === companyName));
+  }
+
+  getCompanyByName(companyName) {
+    return this.getShortCompanyByName(companyName)
       .then((company) => {
         if (!company) return company; // return early if not defined
 
-        return this.getCompany(requestId, company.id);
+        return this.getCompany(company.id);
       });
   }
 }

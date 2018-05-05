@@ -1,7 +1,7 @@
 import Boom from 'boom';
 import Joi from 'joi';
 import logger from '../../../logger';
-import DbOrderService from '../../../service/DbOrderService';
+import DbOrderService from '../../../service/OrderService';
 import CrmService from '../../../service/CrmService';
 
 export default () => ({
@@ -21,17 +21,17 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    const crmService = new CrmService();
-    const orderService = new DbOrderService();
+    const crmService = new CrmService(req.auth.credentials.sub);
+    const orderService = new DbOrderService(req.auth.credentials.sub);
     orderService.getOrder(req.params.id)
       .then((order) => {
         if (order.store.id) {
-          return crmService.getCompany(req.auth.credentials.sub, order.store.id)
+          return crmService.getCompany(order.store.id)
             .then(company => orderService.updateCompany(order.id, company))
             .then(company => reply(company));
         }
 
-        return crmService.getCompanyByName(req.auth.credentials.sub, order.store.name)
+        return crmService.getCompanyByName(order.store.name)
           .then((companyFromName) => {
             if (companyFromName) {
               return orderService.updateCompany(order.id, companyFromName).then(company => reply(company));

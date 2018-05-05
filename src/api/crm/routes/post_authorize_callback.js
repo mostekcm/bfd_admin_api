@@ -38,8 +38,8 @@ export default () => ({
         code: req.payload.code
       })
       .then((response) => {
-        const service = new CrmService();
-        service.addTokens(req.auth.credentials.sub, response.body)
+        const service = new CrmService(req.auth.credentials.sub);
+        service.addTokens(response.body)
           .then(() => reply({ message: 'it worked!!' }));
       })
       .catch((err, res) => {

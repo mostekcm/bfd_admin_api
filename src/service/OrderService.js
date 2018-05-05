@@ -12,16 +12,16 @@ import * as orderHelper from '../helper/order';
 
 import CaseService from './CaseService';
 import DisplayService from './DisplayService';
+import DealService from './DealService';
 
-export default class DbOrderService {
-  constructor() {
-    // TODO: Do caching for this
-    // TODO: Move this to a provider pattern
+export default class OrderService {
+  constructor(adminId) {
     this.db = null;
     this.casesIndex = null;
     this.displays = null;
 
     this.allowedDealStages = ['Qualifying', 'Pending Approval', 'Approved', 'Closed Won', 'Closed Lost'];
+    this.dealService = new DealService(adminId);
   }
 
   getDb() {
@@ -64,7 +64,7 @@ export default class DbOrderService {
       .then(db =>
         db.collection('counters').findOneAndUpdate(
           { _id: 'invoiceNumber' },
-          { $inc: { seq: 1 } })
+          { $inc: { seq: 1 } }, { returnOriginal: false })
           .then(invoiceNumber => invoiceNumber.value.seq)
           .then(invoiceSeq => sprintf('BFD%08d', parseInt(invoiceSeq, 10)))
       );
@@ -89,15 +89,29 @@ export default class DbOrderService {
             order.dealStage = 'Pending Approval';
           }
 
+          order.totals = orderHelper.orderTotals(order, this.casesIndex, this.displays);
+
           return orders.insertOne(order)
             .then(() => {
               logger.debug(`inserted new order: ${JSON.stringify(order)}`);
-              // TODO: Push deal to hubSpo
-              order.totals = orderHelper.orderTotals(order, this.casesIndex, this.displays);
-              return order;
+
+              return this.updateDeal(order)
+                .catch((err) => {
+                  logger.warn(`Failed to create deal for order ${order.id} because: `, err);
+                  return order;
+                });
             });
-        })
-      );
+        }));
+  }
+
+  updateTotalsIfNeeded(orders, order) {
+    const oldTotals = _.cloneDeep(order.totals);
+    order.totals = orderHelper.orderTotals(order, this.casesIndex, this.displays);
+
+    if (_.isEqual(oldTotals, order.totals)) return Promise.resolve(order);
+
+    return orders.findOneAndUpdate({ id: order.id }, { $set: { totals: order.totals } }, { returnOriginal: false })
+      .then(result => result.value);
   }
 
   patchOrder(id, newOrderAttributes) {
@@ -106,14 +120,49 @@ export default class DbOrderService {
     }
 
     return this.getOrdersCollection()
-      .then(orders => orders.updateOne({ id }, { $set: newOrderAttributes }))
-      .then((retVal) => {
-        if (newOrderAttributes.dealStage) {
-          // TODO: Push deal to hubSpot
+      .then(orders => orders.findOneAndUpdate({ id }, { $set: newOrderAttributes }, { returnOriginal: false })
+        .then(result => this.updateTotalsIfNeeded(orders, result.value)
+          .then(order => this.updateDeal(order)
+            .then(() => order)
+            .catch((err) => {
+              logger.warn('Cannot update deal because: ', err);
+              return order;
+            }))));
+  }
+
+  getDealId(order) {
+    if (order.dealId) return Promise.resolve(order.dealId);
+    if (!order.store || !order.store.id) return Promise.reject(new Error('No store synced from hubspot'));
+    return this.dealService.getDealsForCompany(order.store.id)
+      .then((deals) => {
+        if (deals.missing && deals.missing.length > 0) {
+          deals.missing.forEach(dealId => logger.error('Deal missing BFD order number: ', dealId));
+          return Promise.reject(new Error('Need to fix hubspot deals'));
         }
 
-        return retVal;
+        if (order.invoiceNumber in deals) return Promise.resolve(deals[order.invoiceNumber]);
+        // okay, can create a new one then
+        return this.dealService.createDeal(order);
       });
+  }
+
+  updateDealIdIfNeeded(order, dealId) {
+    if (order.dealId) return Promise.resolve();
+
+    order.dealId = dealId;
+    return this.getOrdersCollection()
+      .then(orders => orders.updateOne({ id: order.id }, {
+        $set: {
+          dealId
+        }
+      }));
+  }
+
+  updateDeal(order) {
+    return this.getDealId(order)
+      .then(dealId => this.updateDealIdIfNeeded(order, dealId)
+        .then(() => this.dealService.updateDealStage(dealId, order))
+        .then(() => order));
   }
 
   updateCompany(id, company) {
@@ -224,14 +273,14 @@ export default class DbOrderService {
 
   getAllNotCancelled(query) {
     const notCancelledQuery = { cancelled: { $not: { $exists: true, $nin: ['', null] } } };
-    const mongoQuery = DbOrderService.getMongoQuery(query);
+    const mongoQuery = OrderService.getMongoQuery(query);
     const finalQuery = mongoQuery ? { $and: [mongoQuery, notCancelledQuery] } : notCancelledQuery;
     return this.getAll(finalQuery);
   }
 
   getAll(query) {
     return this.getOrdersCollection()
-      .then(orders => orders.find(DbOrderService.getMongoQuery(query)).toArray())
+      .then(orders => orders.find(OrderService.getMongoQuery(query)).toArray())
       .then((orderObjects) => {
         orderObjects.forEach((order) => {
           order.totals = orderHelper.orderTotals(order, this.casesIndex, this.displays);

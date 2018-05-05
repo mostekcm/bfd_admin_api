@@ -1,7 +1,7 @@
 import Joi from 'joi';
 import Boom from 'boom';
 import logger from '../../../logger';
-import DbOrderService from '../../../service/DbOrderService';
+import DbOrderService from '../../../service/OrderService';
 
 export default () => ({
   method: 'GET',
@@ -22,7 +22,7 @@ export default () => ({
   },
   handler: (req, reply) => {
     logger.debug('Getting orders with query: ', req.query.search);
-    const orderService = new DbOrderService();
+    const orderService = new DbOrderService(req.auth.credentials.sub);
     orderService.getAllNotCancelled(req.query.search)
       .then(orders => reply(orders))
       .catch((e) => {

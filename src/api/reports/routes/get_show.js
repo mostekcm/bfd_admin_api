@@ -2,7 +2,7 @@ import _ from 'lodash';
 import Joi from 'joi';
 
 import logger from '../../../logger';
-import DbOrderService from '../../../service/DbOrderService';
+import DbOrderService from '../../../service/OrderService';
 import LabelService from '../../../service/LabelService';
 import getOrderNeeds from '../../../helper/reports/orders';
 
@@ -24,7 +24,7 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    const orderService = new DbOrderService();
+    const orderService = new DbOrderService(req.auth.credentials.sub);
     const labelService = new LabelService();
     labelService.getAll()
       .then(labelUse =>

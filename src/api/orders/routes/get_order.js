@@ -2,7 +2,7 @@ import Joi from 'joi';
 import Boom from 'boom';
 
 import logger from '../../../logger';
-import DbOrderService from '../../../service/DbOrderService';
+import DbOrderService from '../../../service/OrderService';
 
 export default () => ({
   method: 'GET',
@@ -21,7 +21,7 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    const orderService = new DbOrderService();
+    const orderService = new DbOrderService(req.auth.credentials.sub);
     orderService.getOrder(req.params.id)
       .then(order => reply(order))
       .catch((e) => {

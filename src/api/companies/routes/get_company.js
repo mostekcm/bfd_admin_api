@@ -22,8 +22,8 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    const crmService = new CrmService();
-    crmService.getCompany(req.auth.credentials.sub, req.params.id)
+    const crmService = new CrmService(req.auth.credentials.sub);
+    crmService.getCompany(req.params.id)
       .then(company => reply(company))
       .catch((e) => {
         if (e.message) {

@@ -1,6 +1,6 @@
 import Boom from 'boom';
 import logger from '../../../logger';
-import DbOrderService from '../../../service/DbOrderService';
+import DbOrderService from '../../../service/OrderService';
 import WholesaleCustomerSheetService from '../../../service/WholesaleCustomerSheetService';
 
 export default () => ({
@@ -15,7 +15,7 @@ export default () => ({
     tags: ['api']
   },
   handler: (req, reply) => {
-    const orderService = new DbOrderService();
+    const orderService = new DbOrderService(req.auth.credentials.sub);
     const wholesaleService = new WholesaleCustomerSheetService();
 
     orderService.getAll()

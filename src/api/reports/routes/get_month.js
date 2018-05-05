@@ -3,7 +3,7 @@ import Joi from 'joi';
 import moment from 'moment';
 
 import logger from '../../../logger';
-import DbOrderService from '../../../service/DbOrderService';
+import DbOrderService from '../../../service/OrderService';
 import LabelService from '../../../service/LabelService';
 import getOrderNeeds from '../../../helper/reports/orders';
 
@@ -26,7 +26,7 @@ export default () => ({
   },
   handler: (req, reply) => {
     const labelService = new LabelService();
-    const orderService = new DbOrderService();
+    const orderService = new DbOrderService(req.auth.credentials.sub);
 
     const year = req.params.year || parseInt(moment().format('YYYY'), 10);
 
