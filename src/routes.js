@@ -3,6 +3,7 @@ import getCompanies from './api/companies/routes/get_companies';
 import getCompany from './api/companies/routes/get_company';
 import getDisplays from './api/displays/routes/get_displays';
 import getOrders from './api/orders/routes/get_orders';
+import getOrdersByDate from './api/orders/routes/get_orders_by_date';
 import getOrder from './api/orders/routes/get_order';
 import postOrder from './api/orders/routes/post_order';
 import patchOrder from './api/orders/routes/patch_order';
@@ -28,6 +29,7 @@ const register = (server, options, next) => {
   server.route(getCompany(server));
   server.route(getDisplays(server));
   server.route(getOrders(server));
+  server.route(getOrdersByDate(server));
   server.route(getOrder(server));
   server.route(postOrder(server));
   server.route(patchOrder(server));

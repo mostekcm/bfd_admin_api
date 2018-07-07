@@ -262,6 +262,26 @@ export default class OrderService {
     });
   }
 
+  getFromOrderDateRange(startTime, endTime) {
+    const query = {
+      $or: [
+        {
+          date: { $exists: true, $gte: startTime }
+        },
+        {
+          date: { $exists: true, $gte: `${startTime}` }
+        }
+      ]
+    };
+
+    if (endTime > 0) {
+      query.$or[0].date.$lt = endTime;
+      query.$or[1].date.$lt = `${endTime}`;
+    }
+
+    return this.getAllNotCancelled(query);
+  }
+
   getPendingCommissionOrders() {
     return this.getAllNotCancelled({
       $nor: [{ payments: { $exists: false } }, { payments: { $size: 0 } }],
