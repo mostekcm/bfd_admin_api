@@ -135,7 +135,7 @@ export default class CrmService {
   getCompanies() {
     return this.getAccessToken()
       .then(accessToken => request
-        .get('https://api.hubapi.com/companies/v2/companies/paged?properties=name')
+        .get('https://api.hubapi.com/companies/v2/companies/paged?limit=250&properties=name')
         .set('Authorization', `Bearer ${accessToken}`)
         .then(response => CrmService.mapHubSpotCompaniesToBfd(response.body.companies)));
   }
