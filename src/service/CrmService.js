@@ -24,9 +24,19 @@ export default class CrmService {
 
   static mapHubSpotContactPropertiesToInfo(contact) {
     const properties = _.mapValues(contact.properties, 'value');
+    const firstName = properties.firstname && properties.firstname.length > 0 ? properties.firstname : undefined;
+    const lastName = properties.lastname && properties.lastname.length > 0 ? properties.lastname : undefined;
+    let name = `${firstName} ${lastName}`;
+    if (!firstName || !lastName) {
+      if (!firstName && !lastName) {
+        name = undefined;
+      } else {
+        name = `${firstName || lastName}`;
+      }
+    }
     return {
       id: contact.vid,
-      name: `${properties.firstname} ${properties.lastname}`,
+      name,
       phone: properties.phone,
       email: properties.email
     };
