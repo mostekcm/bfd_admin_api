@@ -8,6 +8,7 @@ import getOrder from './api/orders/routes/get_order';
 import postOrder from './api/orders/routes/post_order';
 import patchOrder from './api/orders/routes/patch_order';
 import patchOrderCompany from './api/orders/routes/patch_order_company';
+import postOrderPdf from './api/orders/routes/post_order_pdf';
 import deleteOrder from './api/orders/routes/delete_order';
 import getCommissionDueReport from './api/reports/routes/get_commission_due';
 import getShowOrders from './api/orders/routes/get_show_orders';
@@ -34,6 +35,7 @@ const register = (server, options, next) => {
   server.route(postOrder(server));
   server.route(patchOrder(server));
   server.route(patchOrderCompany(server));
+  server.route(postOrderPdf(server));
   server.route(deleteOrder(server));
   server.route(getCommissionDueReport(server));
   server.route(getShowOrders(server));
