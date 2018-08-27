@@ -22,7 +22,7 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    const service = new DbOrderService(req.auth.credentials.sub);
+    const service = new DbOrderService(req.auth.credentials);
     const newOrderAttributes = req.payload;
     logger.info('patching order: ', JSON.stringify(newOrderAttributes));
     service.patchOrder(req.params.id, newOrderAttributes)

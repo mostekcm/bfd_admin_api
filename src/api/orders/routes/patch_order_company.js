@@ -21,8 +21,8 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    const crmService = new CrmService(req.auth.credentials.sub);
-    const orderService = new OrderService(req.auth.credentials.sub);
+    const crmService = new CrmService(req.auth.credentials);
+    const orderService = new OrderService(req.auth.credentials);
 
     const updateCompanyByName = order => crmService.getCompanyByName(order.store.name)
       .then((companyFromName) => {

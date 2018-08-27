@@ -21,7 +21,7 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    const orderService = new DbOrderService(req.auth.credentials.sub);
+    const orderService = new DbOrderService(req.auth.credentials);
 
     orderService.getFromShipmentDateRange(req.query.startDate, req.query.endDate)
       .then(orders => reply(orders))

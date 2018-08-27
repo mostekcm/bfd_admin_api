@@ -19,10 +19,10 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    const service = new DbOrderService(req.auth.credentials.sub);
+    const service = new DbOrderService(req.auth.credentials);
     const order = req.payload;
     logger.info('adding new order: ', JSON.stringify(order));
-    const crmService = new CrmService(req.auth.credentials.sub);
+    const crmService = new CrmService(req.auth.credentials);
     const getCompanyPromise = order.store.id ? crmService.getCompany(order.store.id) :
       Promise.resolve(order.store);
 

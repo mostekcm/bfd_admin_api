@@ -53,6 +53,10 @@ const verifyFunc = (decoded, req, callback) => {
             decoded.payload.scope = decoded.payload.scope.split(' '); // eslint-disable-line no-param-reassign
           }
 
+          if (decoded.payload['http://beautyfullday.com/claims/email']) {
+            decoded.payload.email = decoded.payload['http://beautyfullday.com/claims/email'];
+          }
+
           return callback(null, true, decoded.payload);
         });
       });

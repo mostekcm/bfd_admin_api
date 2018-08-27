@@ -21,7 +21,7 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    const orderService = new DbOrderService(req.auth.credentials.sub);
+    const orderService = new DbOrderService(req.auth.credentials);
     orderService.getOrder(req.params.id)
       .then(order => reply(order))
       .catch((e) => {

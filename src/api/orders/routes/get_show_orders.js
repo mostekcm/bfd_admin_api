@@ -22,7 +22,7 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    const orderService = new DbOrderService(req.auth.credentials.sub);
+    const orderService = new DbOrderService(req.auth.credentials);
     orderService.getShowOrders(req.params.name, req.params.year)
       .then(orders => reply(orders))
       .catch((e) => {

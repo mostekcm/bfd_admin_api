@@ -26,7 +26,7 @@ export default () => ({
   },
   handler: (req, reply) => {
     const labelService = new LabelService();
-    const orderService = new DbOrderService(req.auth.credentials.sub);
+    const orderService = new DbOrderService(req.auth.credentials);
 
     const year = req.params.year || parseInt(moment().format('YYYY'), 10);
 

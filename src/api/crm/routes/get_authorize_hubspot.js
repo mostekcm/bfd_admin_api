@@ -24,7 +24,7 @@ export default () => ({
       authorizeUrl: `https://app.hubspot.com/oauth/authorize?${queryString.stringify({
         client_id: config('HUBSPOT_CLIENT_ID'),
         redirect_uri: config('HUBSPOT_REDIRECT_URI') + `?state=${state}`,
-        scope: 'contacts'
+        scope: 'contacts files'
       })}`
     });
   }

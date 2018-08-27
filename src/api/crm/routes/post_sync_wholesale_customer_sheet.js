@@ -15,7 +15,7 @@ export default () => ({
     tags: ['api']
   },
   handler: (req, reply) => {
-    const orderService = new DbOrderService(req.auth.credentials.sub);
+    const orderService = new DbOrderService(req.auth.credentials);
     const wholesaleService = new WholesaleCustomerSheetService();
 
     orderService.getAll()

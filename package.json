@@ -21,6 +21,7 @@
   "repository": "github:mostekcm/bfd_admin_api",
   "dependencies": {
     "async": "^2.1.5",
+    "auth0": "^2.12.0",
     "babel-core": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "babel-register": "^6.26.0",
@@ -43,6 +44,7 @@
     "mongodb": "^2.2.31",
     "monquery": "^0.2.0",
     "nconf": "^0.8.4",
+    "nodemailer": "^4.6.8",
     "pdfkit": "^0.8.3",
     "promise-throttle": "^0.3.1",
     "request": "^2.78.0",

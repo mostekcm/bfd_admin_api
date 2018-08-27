@@ -16,7 +16,7 @@ export default () => ({
     validate: {}
   },
   handler: (req, reply) => {
-    const orderService = new DbOrderService(req.auth.credentials.sub);
+    const orderService = new DbOrderService(req.auth.credentials);
     orderService.getPendingCommissionOrders()
       .then((orders) => {
         const orderMap = {};

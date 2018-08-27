@@ -20,7 +20,7 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    const service = new DbOrderService(req.auth.credentials.sub);
+    const service = new DbOrderService(req.auth.credentials);
     logger.warn('deleting order: ', req.params.id);
     service.deleteOrder(req.params.id)
       .then(() => reply({ id: req.params.id }))

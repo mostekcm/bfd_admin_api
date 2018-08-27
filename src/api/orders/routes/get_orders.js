@@ -22,7 +22,7 @@ export default () => ({
   },
   handler: (req, reply) => {
     logger.debug('Getting orders with query: ', req.query.search);
-    const orderService = new DbOrderService(req.auth.credentials.sub);
+    const orderService = new DbOrderService(req.auth.credentials);
     orderService.getAllNotCancelled(req.query.search)
       .then(orders => reply(orders))
       .catch((e) => {

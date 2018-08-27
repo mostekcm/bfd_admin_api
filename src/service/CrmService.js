@@ -7,12 +7,29 @@ import request from 'superagent';
 import logger from '../logger';
 import config from '../config';
 
+import EmailService from './EmailService';
+
+const EMAIL_STAGE = {
+  PAID_INVOICE: 'PAID_INVOICE',
+  INVOICE: 'INVOICE',
+  ORDER_CONFIRMATION: 'ORDER_CONFIRMATION'
+};
+
+const DEAL_STAGE = {
+  CLOSED_WON: 'Closed Won',
+  CLOSED_LOST: 'Closed Lost',
+  QUALIFYING: 'Qualifying',
+  PENDING: 'Pending Approval',
+  APPROVED: 'Approved'
+};
+
 export default class CrmService {
-  constructor(adminId) {
+  constructor(admin) {
     // TODO: Do caching for this
     // TODO: Move this to a provider pattern
     this.db = null;
-    this.adminId = adminId;
+    this.adminId = admin.sub;
+    this.admin = admin;
   }
 
   static mapHubSpotCompaniesToBfd(companies) {
@@ -96,10 +113,12 @@ export default class CrmService {
       .then((db) => {
         const expiresAt = moment().unix() + tokens.expires_in;
         const hubSpot = db.collection('hubspot');
-        return hubSpot.insertOne(_.assign({}, {
-          id: this.adminId,
-          expiresAt
-        }, tokens));
+        return hubSpot.update({ id: this.adminId },
+          _.assign({}, {
+            id: this.adminId,
+            expiresAt
+          }, tokens),
+          { upsert: true });
       });
   }
 
@@ -181,5 +200,69 @@ export default class CrmService {
 
         return this.getCompany(company.id);
       });
+  }
+
+  /**
+   * Email methods
+   */
+  static getEmailStage(order) {
+    if (order.dealStage === DEAL_STAGE.CLOSED_WON) {
+      if (Math.abs(order.totals.owed) > 0.01) {
+        return EMAIL_STAGE.INVOICE;
+      }
+      return EMAIL_STAGE.PAID_INVOICE;
+    }
+
+    return EMAIL_STAGE.ORDER_CONFIRMATION;
+  }
+
+  sendEmail(order, emailText, pdfBuffer) {
+    const emailStage = CrmService.getEmailStage(order);
+    const pdfName = `${order.store.name} ${emailStage} ${order.invoiceNumber} ${moment().format('MM-DD-YY')}.pdf`;
+
+    /* Create engagement */
+    const emailService = new EmailService(this.admin);
+    return emailService.sendEmail(this.admin.email, _.map(order.store.contacts, contact => contact.email), undefined, undefined, emailStage, emailText, pdfName, pdfBuffer)
+      .then(() =>
+        this.getAccessToken(this.adminId)
+          .then(accessToken => request
+            .post('https://api.hubapi.com/filemanager/api/v2/files?hidden=true')
+            .set('Authorization', `Bearer ${accessToken}`)
+            .attach('files', pdfBuffer, pdfName)
+            .field('folder_paths', `emails/deals/${order.invoiceNumber}`)
+            .then((response) => {
+              const engagement = {
+                engagement: {
+                  active: true,
+                  type: 'EMAIL'
+                },
+                associations: {
+                  contactIds: _.map(order.store.contacts, contact => contact.id),
+                  companyIds: [order.store.id],
+                  dealIds: [order.dealId]
+                },
+                attachments: [
+                  {
+                    id: response.body.objects[0].id
+                  }
+                ],
+                metadata: {
+                  from: {
+                    email: this.admin.email
+                  },
+                  to: _.map(order.store.contacts, contact => ({ email: contact.email })),
+                  cc: [],
+                  bcc: [],
+                  subject: emailStage,
+                  // html: " email body in html ",
+                  text: emailText
+                }
+              };
+              return request
+                .post('https://api.hubapi.com/engagements/v1/engagements')
+                .set('Authorization', `Bearer ${accessToken}`)
+                .send(engagement);
+            }))
+          .then(() => emailStage));
   }
 }

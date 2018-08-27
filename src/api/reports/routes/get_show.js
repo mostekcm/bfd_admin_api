@@ -24,7 +24,7 @@ export default () => ({
     }
   },
   handler: (req, reply) => {
-    const orderService = new DbOrderService(req.auth.credentials.sub);
+    const orderService = new DbOrderService(req.auth.credentials);
     const labelService = new LabelService();
     labelService.getAll()
       .then(labelUse =>

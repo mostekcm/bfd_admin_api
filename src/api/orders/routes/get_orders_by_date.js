@@ -22,7 +22,7 @@ export default () => ({
   },
   handler: (req, reply) => {
     logger.debug('Getting orders with dates: ', req.query.from, req.query.to);
-    const orderService = new OrderService(req.auth.credentials.sub);
+    const orderService = new OrderService(req.auth.credentials);
     orderService.getFromOrderDateRange(req.query.from, req.query.to)
       .then(orders => reply(orders))
       .catch((e) => {
