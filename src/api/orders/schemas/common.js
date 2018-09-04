@@ -69,7 +69,7 @@ export const store = Joi.object().keys({
 
 export const payment = Joi.object().keys({
   date: Joi.number().min(1).required(),
-  amount: Joi.number().min(0.01).max(1000000).required()
+  amount: Joi.number().min(-1000000).max(1000000).required()
 });
 
 export const commission = Joi.object().keys({
