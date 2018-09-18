@@ -55,7 +55,8 @@ export default class CrmService {
       id: contact.vid,
       name,
       phone: properties.phone,
-      email: properties.email
+      email: properties.email,
+      include_on_orders: properties.include_on_orders
     };
   }
 
@@ -63,6 +64,18 @@ export default class CrmService {
     company.contacts = _(contacts)
       .map(contact => CrmService.mapHubSpotContactPropertiesToInfo(contact))
       .value();
+
+    const includeOnly = _(company.contacts)
+      .filter(contact => contact.include_on_orders === 'true')
+      .value();
+
+    if (includeOnly && includeOnly.length > 0) {
+      company.contacts = includeOnly;
+    } else {
+      company.contacts = _(company.contacts)
+        .filter(contact => contact.include_on_orders !== 'false')
+        .value();
+    }
 
     return company;
   }
