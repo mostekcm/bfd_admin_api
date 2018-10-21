@@ -23,6 +23,11 @@ const DEAL_STAGE = {
   APPROVED: 'Approved'
 };
 
+const PAYMENT_METHOD = {
+  CREDIT: 'credit',
+  CHECK: 'check'
+};
+
 export default class CrmService {
   constructor(admin) {
     // TODO: Do caching for this
@@ -89,10 +94,16 @@ export default class CrmService {
       `${properties.address}${properties.address2 ? ', ' + properties.address2 : ''}, ${properties.city}, ${properties.state}  ${properties.zip}` :
       undefined;
 
+    const paymentTerms = {
+      net: properties.payment_net ? properties.payment_net : 0,
+      method: properties.payment_method || PAYMENT_METHOD.CREDIT
+    };
+
     return {
       name: properties.name,
       shippingAddress,
-      billingAddress
+      billingAddress,
+      paymentTerms
     };
   }
 
