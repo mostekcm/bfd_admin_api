@@ -28,6 +28,12 @@ const PAYMENT_METHOD = {
   CHECK: 'check'
 };
 
+const PAYMENT_NET = {
+  NET_0: 'NET 0',
+  NET_30: 'NET 30',
+  NET_45: 'NET 45'
+};
+
 export default class CrmService {
   constructor(admin) {
     // TODO: Do caching for this
@@ -95,7 +101,7 @@ export default class CrmService {
       undefined;
 
     const paymentTerms = {
-      net: properties.payment_net ? properties.payment_net : 0,
+      net: properties.payment_net ? properties.payment_net : PAYMENT_NET.NET_0,
       method: properties.payment_method || PAYMENT_METHOD.CREDIT
     };
 
