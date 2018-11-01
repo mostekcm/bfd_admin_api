@@ -57,6 +57,11 @@ export const displayItem = Joi.object().keys({
   weight: Joi.number()
 });
 
+export const paymentTerms = Joi.object().keys({
+  net: Joi.string().max(50).allow(''),
+  method: Joi.string().max(50).allow('')
+});
+
 export const store = Joi.object().keys({
   id: Joi.number().min(100000000).max(100000000000),
   name: Joi.string().max(500).required(),
@@ -64,6 +69,7 @@ export const store = Joi.object().keys({
   phone: Joi.string().max(30).allow(''),
   email: Joi.string().max(100).allow(''),
   contact: Joi.string().max(100).allow(''),
+  paymentTerms: paymentTerms,
   billingAddress: Joi.string().max(500).allow('')
 });
 
