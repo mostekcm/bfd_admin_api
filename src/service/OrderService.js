@@ -305,12 +305,16 @@ export default class OrderService {
       $or: [
         { dealStage: { $in: ['Qualifying', 'Pending Approval', 'Approved'] } },
         {
-          dealStage: { $in: ['Closed Won', 'Closed Lost'] },
+          dealStage: 'Closed Won',
           $or: [
             { 'payments.date': { $exists: true, $gt: oldOrdersTime } },
             { shippedDate: { $exists: true, $gt: oldOrdersTime } },
             { $or: [{ 'totals.owed': { $gt: 0.01 } }, { 'totals.owed': { $lt: -0.01 } }] }
           ]
+        },
+        {
+          dealStage: 'Closed Lost',
+          date: { $gt: oldOrdersTime }
         }
       ]
     };
