@@ -297,8 +297,25 @@ export default class OrderService {
     return _.isString(query) && query.length > 0 ? mongoQueryCompile(query) : query;
   }
 
-  getAllNotCancelled(query) {
-    const notCancelledQuery = { cancelled: { $not: { $exists: true, $nin: ['', null] } } };
+  getAllNotCancelled(query, ageInput) {
+    const oldOrdersTime = !ageInput && ageInput !== 0 ? 0 : moment().unix() - (24 * 60 * 60 * ageInput);
+
+    const notCancelledQuery = {
+      cancelled: { $not: { $exists: true, $nin: ['', null] } },
+      $or: [
+        { dealStage: { $in: ['Qualifying', 'Pending Approval', 'Approved'] } },
+        {
+          dealStage: { $in: ['Closed Won', 'Closed Lost'] },
+          $or: [
+            { 'payments.date': { $exists: true, $gt: oldOrdersTime } },
+            { shippedDate: { $exists: true, $gt: oldOrdersTime } },
+            { $or: [{ 'totals.owed': { $gt: 0.01 } }, { 'totals.owed': { $lt: -0.01 } }] }
+          ]
+        }
+      ]
+    };
+
+    console.log('query: ', JSON.stringify(notCancelledQuery));
     const mongoQuery = OrderService.getMongoQuery(query);
     const finalQuery = mongoQuery ? { $and: [mongoQuery, notCancelledQuery] } : notCancelledQuery;
     return this.getAll(finalQuery);

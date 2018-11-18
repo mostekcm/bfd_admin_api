@@ -16,14 +16,15 @@ export default () => ({
     validate: {
       query: {
         search: Joi.string().max(1000).allow('').default(''),
-        page: Joi.number().integer().min(0).max(1000)
+        page: Joi.number().integer().min(0).max(1000),
+        age: Joi.number().integer().min(0)
       }
     }
   },
   handler: (req, reply) => {
     logger.debug('Getting orders with query: ', req.query.search);
     const orderService = new DbOrderService(req.auth.credentials);
-    orderService.getAllNotCancelled(req.query.search)
+    orderService.getAllNotCancelled(req.query.search, req.query.age)
       .then(orders => reply(orders))
       .catch((e) => {
         if (e.message) {
