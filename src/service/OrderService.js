@@ -315,7 +315,6 @@ export default class OrderService {
       ]
     };
 
-    console.log('query: ', JSON.stringify(notCancelledQuery));
     const mongoQuery = OrderService.getMongoQuery(query);
     const finalQuery = mongoQuery ? { $and: [mongoQuery, notCancelledQuery] } : notCancelledQuery;
     return this.getAll(finalQuery);
