@@ -19,7 +19,7 @@ export const getCommissionInfo = (order, commissionBase) => {
     commissionMultiplier = order.show.name === 'Reorder' ? 0.07 : 0;
   }
 
-  if (order.salesRep.name === 'Brooke Davis') {
+  if (order.salesRep.name === 'Brooke Davis' || order.salesRep.name === 'Amy Zwolanek Laird') {
     commissionMultiplier = 0;
   }
 
@@ -132,7 +132,7 @@ export const orderTotals = (order, casesIndex, displays) => {
 
   const total = (shippingAndHandling + totalProduct) - (discount);
   const totalOwed = total - totalPaid;
-  const commissionBase = totalItem + totalDisplay;
+  const commissionBase = totalItem;
   const commissionInfo = getCommissionInfo(order, commissionBase);
   const totals = {
     total,

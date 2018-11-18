@@ -1,7 +1,7 @@
 import _ from 'lodash';
 
 import logger from '../../../logger';
-import DbOrderService from '../../../service/OrderService';
+import OrderService from '../../../service/OrderService';
 
 export default () => ({
   method: 'GET',
@@ -16,7 +16,7 @@ export default () => ({
     validate: {}
   },
   handler: (req, reply) => {
-    const orderService = new DbOrderService(req.auth.credentials);
+    const orderService = new OrderService(req.auth.credentials);
     orderService.getPendingCommissionOrders()
       .then((orders) => {
         const orderMap = {};
