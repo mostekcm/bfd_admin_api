@@ -128,9 +128,9 @@ export default class CrmService {
     const me = this;
 
     return mongo.MongoClient.connect(config('MONGO_URI'))
-      .then((db) => {
-        me.db = db;
-        return db;
+      .then((client) => {
+        me.db = client.db(config('MONGO_DB_NAME'));
+        return me.db;
       });
   }
 

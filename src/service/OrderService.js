@@ -41,9 +41,9 @@ export default class OrderService {
           me.displays = displays;
           me.casesIndex = _(cases).groupBy(caseInfo => caseInfo.sku.product.name).value();
           return mongo.MongoClient.connect(config('MONGO_URI'))
-            .then((db) => {
-              me.db = db;
-              return db;
+            .then((client) => {
+              me.db = client.db(config('MONGO_DB_NAME'));
+              return me.db;
             });
         }));
   }
