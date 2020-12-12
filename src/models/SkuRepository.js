@@ -1,4 +1,3 @@
-import Promise from 'bluebird';
 import logger from '../logger';
 
 /**
@@ -10,43 +9,40 @@ class SkuRepository {
   }
 
   /* Private function */
-  static create(sheet) {
+  static async create(sheet) {
     const skus = [];
-    const getRows = Promise.promisify(sheet.getRows, { context: sheet });
 
     /* Loop through and initialize the set of skus from the product tab */
-    return getRows({
+    const rows = await sheet.getRows({
       offset: 1,
       limit: 1000
       // orderby: 'col2'
-    })
-      .then((rows) => {
-        logger.debug(`found ${rows.length} skus`);
+    });
+    logger.debug(`found ${rows.length} skus`);
 
-        rows.forEach((row) => {
-          if (!(row.productname in skus)) skus[row.productname] = {};
-          skus[row.productname][row.size] = {
-            product: {
-              name: row.productname,
-              category: {
-                name: row.categoryname,
-                order: row.categoryorder
-              }
-            },
-            varieties: row.varieties ? row.varieties.split(',') : [],
-            time: {
-              toLabel: row.timetolabel,
-              toFill: row.timetofill
-            },
-            msrp: row.msrp,
-            upc: row.upc,
-            size: row.size,
-            weight: row.weight
-          };
-        });
+    rows.forEach((row) => {
+      if (!(row.productname in skus)) skus[row.productname] = {};
+      skus[row.productname][row.size] = {
+        product: {
+          name: row.productname,
+          category: {
+            name: row.categoryname,
+            order: row.categoryorder
+          }
+        },
+        varieties: row.varieties ? row.varieties.split(',') : [],
+        time: {
+          toLabel: row.timetolabel,
+          toFill: row.timetofill
+        },
+        msrp: row.msrp,
+        upc: row.upc,
+        size: row.size,
+        weight: row.weight
+      };
+    });
 
-        return new SkuRepository(skus);
-      });
+    return new SkuRepository(skus);
   }
 
   find(productName, size) {
