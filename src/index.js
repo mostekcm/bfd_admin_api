@@ -4,7 +4,8 @@ import backend from './server';
 
 const env = config('NODE_ENV');
 const port = config('PORT');
-backend.start(function(err) {
-  if (err) logger.error(err);
-  else logger.info(`Backend server listening on port ${port} in ${env} mode`);
-});
+
+backend
+  .start()
+  .then(logger.info(`Backend server listening on port ${port} in ${env} mode`))
+  .catch(logger.error);

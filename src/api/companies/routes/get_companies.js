@@ -22,10 +22,9 @@ export default () => ({
       }
     }
   },
-  handler: (req, reply) => {
+  handler: async (req) => {
     const crmService = new CrmService(req.auth.credentials);
-    crmService.getCompanies()
-      .then(companies => reply(companies))
+    return crmService.getCompanies()
       .catch((e) => {
         if (e.message) {
           logger.error('Error trying to get companies data: ', e.message);
@@ -34,7 +33,7 @@ export default () => ({
           logger.error(e);
         }
 
-        return reply(Boom.wrap(e));
+        return Boom.wrap(e);
       });
   }
 });

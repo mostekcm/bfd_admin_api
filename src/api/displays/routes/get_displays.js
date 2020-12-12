@@ -22,10 +22,9 @@ export default () => ({
       }
     }
   },
-  handler: (req, reply) => {
+  handler: async () => {
     const displayService = new DisplayService();
-    displayService.getAll()
-      .then(displays => reply(displays))
+    return displayService.getAll()
       .catch((e) => {
         if (e.message) {
           logger.error('Error trying to get displays data: ', e.message);
@@ -34,7 +33,7 @@ export default () => ({
           logger.error(e);
         }
 
-        return reply(Boom.wrap(e));
+        return Boom.wrap(e);
       });
   }
 });

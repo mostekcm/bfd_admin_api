@@ -1,17 +1,15 @@
 import jwks from 'jwks-rsa';
 import jwt from 'jsonwebtoken';
 import Boom from 'boom';
-import logger from './logger';
+// import logger from './logger';
 import config from './config';
 
-const validateUser = (decoded, request, callback) => {
-  logger.info('Validating user:', decoded);
-
+const validateUser = async (decoded) => {
   if (decoded && decoded.sub) {
-    return callback(null, true);
+    return { isValid: true, credentials: decoded };
   }
 
-  return callback(null, false);
+  return { isValid: false };
 };
 
 const jwtOptions = {
@@ -31,61 +29,73 @@ const jwtOptions = {
   }
 };
 
-const verifyFunc = (decoded, req, callback) => {
+const verifyFunc = async (decoded, req) => {
   if (!decoded) {
-    return callback(null, false);
+    return { isValid: false };
   }
-  const header = req.headers.authorization;
-  if (header && header.indexOf('Bearer ') === 0) {
-    const token = header.split(' ')[1];
+  let token = null;
+  if (req.headers.authorization && req.headers.authorization.indexOf('Bearer ') === 0) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+  if (!token && req.body.token) {
+    token = req.body.token;
+  }
+  if (token) {
     if (decoded && decoded.payload && decoded.payload.iss === `https://${config('AUTH0_DOMAIN')}/`) {
-      return jwtOptions.key(decoded, (keyErr, key) => {
-        if (keyErr) {
-          return callback(Boom.wrap(keyErr), null, null);
-        }
-
-        return jwt.verify(token, key, jwtOptions.verifyOptions, (err) => {
-          if (err) {
-            return callback(Boom.unauthorized('Invalid token', 'Token'), null, null);
+      return new Promise((resolve, reject) => {
+        jwtOptions.key(decoded, (keyErr, key) => {
+          if (keyErr) {
+            return reject(Boom.wrap(keyErr));
           }
 
-          if (decoded.payload.scope && typeof decoded.payload.scope === 'string') {
-            decoded.payload.scope = decoded.payload.scope.split(' '); // eslint-disable-line no-param-reassign
-          }
+          return jwt.verify(token, key, jwtOptions.verifyOptions, (err) => {
+            if (err) {
+              return reject(Boom.unauthorized('Invalid token', 'Token'));
+            }
 
-          if (decoded.payload['http://beautyfullday.com/claims/email']) {
-            decoded.payload.email = decoded.payload['http://beautyfullday.com/claims/email'];
-          }
+            if (decoded.payload.scope && typeof decoded.payload.scope === 'string') {
+              decoded.payload.scope = decoded.payload.scope.split(' '); // eslint-disable-line no-param-reassign
+            }
 
-          return callback(null, true, decoded.payload);
+            if (decoded.payload['http://beautyfullday.com/claims/email']) {
+              decoded.payload.email = decoded.payload['http://beautyfullday.com/claims/email'];
+            }
+
+            return resolve(validateUser(decoded.payload, req));
+          });
         });
       });
     }
   }
 
-  return callback(null, false);
+  return { isValid: false };
 };
 
-const register = (server, options, next) => {
-  server.auth.strategy('jwt', 'jwt', {
-    // Get the complete decoded token, because we need info from the header (the kid)
-    complete: true,
+const plugin = {
+  register: async (server) => {
+    server.auth.strategy('jwt', 'jwt', {
+      // Get the complete decoded token, because we need info from the header (the kid)
+      complete: true,
 
-    // Your own logic to validate the user.
-    validateFunc: validateUser,
+      // // Your own logic to validate the user.
+      // validate: validateUser,
+      urlKey: false,
 
-    // Our own verify function because the hapi one is no good
-    verifyFunc: verifyFunc
+      attemptToExtractTokenInPayload: true,
 
-  });
+      payload: verifyFunc,
 
-  server.auth.default('jwt');
+      payloadFunc: verifyFunc,
 
-  next();
+      // Our own verify function because the hapi one is no good
+      verify: verifyFunc
+
+    });
+
+    server.auth.default('jwt');
+  },
+  name: 'auth',
+  version: '1.0.0'
 };
 
-register.attributes = {
-  name: 'auth'
-};
-
-export default register;
+export default plugin;

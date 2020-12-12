@@ -21,10 +21,10 @@ export default () => ({
       }
     }
   },
-  handler: (req, reply) => {
+  handler: (req, h) => {
     const orderService = new DbOrderService(req.auth.credentials);
     orderService.getShowOrders(req.params.name, req.params.year)
-      .then(orders => reply(orders))
+      .then(orders => h.response(orders))
       .catch((e) => {
         if (e.message) {
           logger.error('Error trying to get order data: ', e.message);
@@ -33,7 +33,7 @@ export default () => ({
           logger.error(e);
         }
 
-        return reply({
+        return h.response({
           statusCode: 500,
           error: 'Internal Configuration Error',
           message: e.message ? e.message : e

@@ -14,6 +14,8 @@ import deleteOrder from './api/orders/routes/delete_order';
 import getCommissionDueReport from './api/reports/routes/get_commission_due';
 import getShowOrders from './api/orders/routes/get_show_orders';
 import getShowReport from './api/reports/routes/get_show';
+import getSalesToCsv from './api/reports/routes/get_sales_data_to_csv';
+import getSalesToLogzio from './api/reports/routes/get_sales_data_to_logzio';
 import getMonthReport from './api/reports/routes/get_month';
 import getPackages from './api/packages/routes/get_packages';
 import getPaymentsReport from './api/reports/routes/get_payments';
@@ -21,42 +23,43 @@ import getShipmentsReport from './api/reports/routes/get_shipments';
 import getLabelUses from './api/labels/routes/get_label_uses';
 
 // CRM
-import syncWholesaleCustomerSheet from './api/crm/routes/post_sync_wholesale_customer_sheet';
-import crmAuthorizeCallback from './api/crm/routes/post_authorize_callback';
-import crmAuthorizeHubspot from './api/crm/routes/get_authorize_hubspot';
+import syncWholesaleCustomerSheet from './crm/routes/post_sync_wholesale_customer_sheet';
+import crmAuthorizeCallback from './crm/routes/get_authorize_callback';
+import crmAuthorizeHubspot from './crm/routes/post_authorize_hubspot';
 
-const register = (server, options, next) => {
-  server.route(getCases(server));
-  server.route(getCompanies(server));
-  server.route(getCompany(server));
-  server.route(getDisplays(server));
-  server.route(getOrders(server));
-  server.route(getOrdersByDate(server));
-  server.route(getOrder(server));
-  server.route(postOrder(server));
-  server.route(patchOrder(server));
-  server.route(patchOrderCompany(server));
-  server.route(postOrderPdf(server));
-  server.route(postOrderSendEmail(server));
-  server.route(deleteOrder(server));
-  server.route(getCommissionDueReport(server));
-  server.route(getShowOrders(server));
-  server.route(getShowReport(server));
-  server.route(getMonthReport(server));
-  server.route(getPackages(server));
-  server.route(getPaymentsReport(server));
-  server.route(getShipmentsReport(server));
-  server.route(getLabelUses(server));
-  // CRM
-  server.route(syncWholesaleCustomerSheet(server));
-  server.route(crmAuthorizeCallback(server));
-  server.route(crmAuthorizeHubspot(server));
+const plugin = {
+  register: async (server) => {
+    server.route(getCases(server));
+    server.route(getCompanies(server));
+    server.route(getCompany(server));
+    server.route(getDisplays(server));
+    server.route(getOrders(server));
+    server.route(getOrdersByDate(server));
+    server.route(getOrder(server));
+    server.route(postOrder(server));
+    server.route(patchOrder(server));
+    server.route(patchOrderCompany(server));
+    server.route(postOrderPdf(server));
+    server.route(postOrderSendEmail(server));
+    server.route(deleteOrder(server));
+    server.route(getCommissionDueReport(server));
+    server.route(getSalesToCsv(server));
+    server.route(getSalesToLogzio(server));
+    server.route(getShowOrders(server));
+    server.route(getShowReport(server));
+    server.route(getMonthReport(server));
+    server.route(getPackages(server));
+    server.route(getPaymentsReport(server));
+    server.route(getShipmentsReport(server));
+    server.route(getLabelUses(server));
+    // CRM
+    server.route(syncWholesaleCustomerSheet(server));
+    server.route(crmAuthorizeCallback(server));
+    server.route(crmAuthorizeHubspot(server));
+  },
 
-  next();
+  name: 'routes',
+  version: '1.0.0'
 };
 
-register.attributes = {
-  name: 'routes'
-};
-
-export default register;
+export default plugin;

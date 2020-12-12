@@ -21,11 +21,10 @@ export default () => ({
       }
     }
   },
-  handler: (req, reply) => {
+  handler: async (req) => {
     logger.debug('Getting orders with query: ', req.query.search);
     const orderService = new DbOrderService(req.auth.credentials);
-    orderService.getAllNotCancelled(req.query.search, req.query.age)
-      .then(orders => reply(orders))
+    return orderService.getAllNotCancelled(req.query.search, req.query.age)
       .catch((e) => {
         if (e.message) {
           logger.error('Error trying to get orders data: ', e.message);
@@ -34,7 +33,7 @@ export default () => ({
           logger.error(e);
         }
 
-        return reply(Boom.wrap(e));
+        return Boom.wrap(e);
       });
   }
 });
