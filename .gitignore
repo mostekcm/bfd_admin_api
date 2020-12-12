@@ -1,3 +1,5 @@
+__preprocessor__
+*.csv
 .env
 dist
 node_modules

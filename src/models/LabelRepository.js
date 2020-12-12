@@ -1,5 +1,3 @@
-import Promise from 'bluebird';
-
 import logger from '../logger';
 
 /**
@@ -11,77 +9,69 @@ export default class LabelRepository {
     this.labelUse = labelUse;
   }
 
-  static createLabelInfo(labelSheet) {
-    const getLabelRows = Promise.promisify(labelSheet.getRows, { context: labelSheet });
-
-    return getLabelRows({
+  static async createLabelInfo(labelSheet) {
+    const rows = await labelSheet.getRows({
       offset: 1,
       limit: 1000
-      // orderby: 'col2'
-    })
-      .then((rows) => {
-        const labels = {};
-        logger.debug('Read ' + rows.length + ' label rows');
+    });
+    const labels = {};
+    logger.debug('Read ' + rows.length + ' label rows');
 
-        rows.forEach((row) => {
-          const key = `${row.size},${row.type},${row.shape}`;
+    rows.forEach((row) => {
+      const key = `${row.size},${row.type},${row.shape}`;
 
-          labels[key] = {
-            labelKey: key,
-            size: row.size,
-            type: row.type,
-            shape: row.shape,
-            vendor: {
-              name: row.vendorname,
-              code: row.vendorcode
-            },
-            labelsPerSheet: parseInt(row.labelspersheet, 10)
-          };
-        });
+      labels[key] = {
+        labelKey: key,
+        size: row.size,
+        type: row.type,
+        shape: row.shape,
+        vendor: {
+          name: row.vendorname,
+          code: row.vendorcode
+        },
+        labelsPerSheet: parseInt(row.labelspersheet, 10)
+      };
+    });
 
-        return labels;
-      });
+    return labels;
   }
 
   /*
    * Returns a promise that will contain a labelRepository instance or throw an error
    */
-  static createFromSheets(labelSheet, labelUseSheet) {
-    const getLabelUseRows = Promise.promisify(labelUseSheet.getRows, { context: labelUseSheet });
-
+  static async createFromSheets(labelSheet, labelUseSheet) {
     /* Loop through and initialize the set of labels from the label4s tab */
-    return this.createLabelInfo(labelSheet)
-      .then(labelInfo => getLabelUseRows({
-        offset: 1,
-        limit: 1000
-        // orderby: 'col2'
-      })
-        .then((rows) => {
-          const labelUse = {};
-          logger.debug('Read ' + rows.length + ' label use rows');
+    const labelInfo = await this.createLabelInfo(labelSheet);
+    const rows = await labelUseSheet.getRows({
+      offset: 1,
+      limit: 1000
+      // orderby: 'col2'
+    });
 
-          rows.forEach((row) => {
-            const key = `${row.skuproductname},${row.skusize}`;
-            if (!(key in labelUse)) labelUse[key] = [];
-            const labelKey = `${row.size},${row.type},${row.shape}`;
-            if (!(labelKey in labelInfo)) {
-              throw new ReferenceError(`Could not find any labels that match (${labelKey}) for label use (${key})`);
-            }
-            labelUse[key].push({
-              productKey: key,
-              sku: {
-                product: { name: row.skuproductname },
-                size: row.skusize
-              },
-              location: row.location,
-              needsPrinting: row.needsprinting,
-              labelInfo: labelInfo[labelKey],
-              pdf: row.pdf
-            });
-          });
+    const labelUse = {};
+    logger.debug('Read ' + rows.length + ' label use rows');
 
-          return new LabelRepository(labelUse);
-        }));
+    rows.forEach((row) => {
+      const key = `${row.skuproductname},${row.skusize}`;
+      if (!(key in labelUse)) labelUse[key] = [];
+      const labelKey = `${row.size},${row.type},${row.shape}`;
+      if (!(labelKey in labelInfo)) {
+        throw new ReferenceError(`Could not find any labels that match (${labelKey}) for label use (${key})`);
+      }
+      labelUse[key].push({
+        productKey: key,
+        sku: {
+          product: { name: row.skuproductname },
+          size: row.skusize
+        },
+        location: row.location,
+        needsPrinting: row.needsprinting,
+        labelInfo: labelInfo[labelKey],
+        pdf: row.pdf
+      });
+    });
+
+    return new LabelRepository(labelUse);
   }
 
   /*
