@@ -14,26 +14,27 @@ export default () => ({
     description: 'Get all orders in the system.',
     tags: ['api'],
     validate: {
-      query: {
+      query: Joi.object({
         search: Joi.string().max(1000).allow('').default(''),
         page: Joi.number().integer().min(0).max(1000),
         age: Joi.number().integer().min(0)
-      }
+      })
     }
   },
   handler: async (req) => {
     logger.debug('Getting orders with query: ', req.query.search);
     const orderService = new DbOrderService(req.auth.credentials);
-    return orderService.getAllNotCancelled(req.query.search, req.query.age)
-      .catch((e) => {
-        if (e.message) {
-          logger.error('Error trying to get orders data: ', e.message);
-          logger.error(e.stack);
-        } else {
-          logger.error(e);
-        }
+    try {
+      return orderService.getAllNotCancelled(req.query.search, req.query.age);
+    } catch (e) {
+      if (e.message) {
+        logger.error('Error trying to get orders data: ', e.message);
+        logger.error(e.stack);
+      } else {
+        logger.error(e);
+      }
 
-        return Boom.wrap(e);
-      });
+      return Boom.wrap(e);
+    }
   }
 });

@@ -41,13 +41,10 @@ export default class CaseService {
       throw new Error(`Bad skus sheet: ${skusSheet ? skusSheet.title : 'none found'}`);
     }
 
-    console.log('carlos creating skurepo');
     const skuRepo = await SkuRepository.create(skusSheet);
-    console.log('carlos creating caserepo');
     const caseRepoInstance = await CaseRepository.createFromSheet(casesSheet, skuRepo);
     lastUpdate = moment().unix();
     caseRepo = caseRepoInstance;
-    console.log('carlos getting all');
     return caseRepoInstance.getAll();
   }
 }

@@ -18,13 +18,13 @@ export default () => ({
     const orderService = new DbOrderService(req.auth.credentials);
     const wholesaleService = new WholesaleCustomerSheetService();
 
-    return orderService.getAll()
-      .then(orders => wholesaleService.syncFromOrders(orders))
-      .catch((e) => {
-        logger.error(e.message);
-        logger.error(e.message);
-        logger.error(e.stack);
-        return Boom.wrap(e);
-      });
+    try {
+      const orders = await orderService.getAll();
+      return wholesaleService.syncFromOrders(orders);
+    } catch (e) {
+      logger.error(e.message);
+      logger.error(e.stack);
+      return Boom.wrap(e);
+    }
   }
 });

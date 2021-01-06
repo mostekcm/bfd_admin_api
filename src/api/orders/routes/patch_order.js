@@ -15,23 +15,22 @@ export default () => ({
     description: 'Patch an order',
     tags: ['api'],
     validate: {
-      params: {
+      params: Joi.object({
         id: Joi.string().guid().required()
-      },
+      }),
       payload: patchOrderSchema
     }
   },
-  handler: (req, reply) => {
+  handler: async (req) => {
     const service = new DbOrderService(req.auth.credentials);
     const newOrderAttributes = req.payload;
     logger.info('patching order: ', JSON.stringify(newOrderAttributes));
-    service.patchOrder(req.params.id, newOrderAttributes)
-      .then(newOrder => reply(newOrder))
-      .catch((e) => {
-        logger.error(e.message);
-        logger.error(e.message);
-        logger.error(e.stack);
-        return reply(Boom.wrap(e));
-      });
+    try {
+      return service.patchOrder(req.params.id, newOrderAttributes);
+    } catch (e) {
+      logger.error(e.message);
+      logger.error(e.stack);
+      return Boom.wrap(e);
+    }
   }
 });

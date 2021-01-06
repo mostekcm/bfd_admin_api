@@ -21,12 +21,12 @@ export default () => ({
       maxBytes: 100000000
     },
     validate: {
-      params: {
+      params: Joi.object({
         id: Joi.string().guid().required()
-      },
-      payload: {
+      }),
+      payload: Joi.object({
         pdf: Joi.binary().required().max(100000000)
-      }
+      })
     }
   },
   handler: (req, reply) => {

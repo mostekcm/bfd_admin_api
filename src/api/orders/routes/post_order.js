@@ -18,25 +18,19 @@ export default () => ({
       payload: orderSchema
     }
   },
-  handler: (req, reply) => {
+  handler: async (req) => {
     const service = new DbOrderService(req.auth.credentials);
     const order = req.payload;
     logger.info('adding new order: ', JSON.stringify(order));
     const crmService = new CrmService(req.auth.credentials);
-    const getCompanyPromise = order.store.id ? crmService.getCompany(order.store.id) :
-      Promise.resolve(order.store);
-
-    getCompanyPromise
-      .then((store) => {
-        order.store = store;
-        return service.addOrder(order)
-          .then(newOrder => reply(newOrder));
-      })
-      .catch((e) => {
-        logger.error(e.message);
-        logger.error(e.message);
-        logger.error(e.stack);
-        return reply(Boom.wrap(e));
-      });
+    try {
+      order.store = order.store.id ? await crmService.getCompany(order.store.id) :
+        order.store;
+      return service.addOrder(order);
+    } catch (e) {
+      logger.error(e.message);
+      logger.error(e.stack);
+      return Boom.wrap(e);
+    }
   }
 });

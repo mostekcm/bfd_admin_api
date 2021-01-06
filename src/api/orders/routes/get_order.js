@@ -15,24 +15,24 @@ export default () => ({
     description: 'Get a single order based on its unique identifier.',
     tags: ['api'],
     validate: {
-      params: {
+      params: Joi.object({
         id: Joi.string().guid().required()
-      }
+      })
     }
   },
-  handler: (req, reply) => {
+  handler: async (req) => {
     const orderService = new DbOrderService(req.auth.credentials);
-    orderService.getOrder(req.params.id)
-      .then(order => reply(order))
-      .catch((e) => {
-        if (e.message) {
-          logger.error('Error trying to get order data: ', e.message);
-          logger.error(e.stack);
-        } else {
-          logger.error(e);
-        }
+    try {
+      return orderService.getOrder(req.params.id);
+    } catch (e) {
+      if (e.message) {
+        logger.error('Error trying to get order data: ', e.message);
+        logger.error(e.stack);
+      } else {
+        logger.error(e);
+      }
 
-        return reply(Boom.wrap(e));
-      });
+      return Boom.wrap(e);
+    }
   }
 });

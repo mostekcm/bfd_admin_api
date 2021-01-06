@@ -16,24 +16,24 @@ export default () => ({
     description: 'Get a specific company in the system.',
     tags: ['api'],
     validate: {
-      params: {
+      params: Joi.object({
         id: Joi.number().required()
-      }
+      })
     }
   },
-  handler: (req, reply) => {
+  handler: async (req) => {
     const crmService = new CrmService(req.auth.credentials);
-    crmService.getCompany(req.params.id)
-      .then(company => reply(company))
-      .catch((e) => {
-        if (e.message) {
-          logger.error('Error trying to get company data: ', e.message);
-          logger.error(e.stack);
-        } else {
-          logger.error(e);
-        }
+    try {
+      return crmService.getCompany(req.params.id);
+    } catch (e) {
+      if (e.message) {
+        logger.error('Error trying to get company data: ', e.message);
+        logger.error(e.stack);
+      } else {
+        logger.error(e);
+      }
 
-        return reply(Boom.wrap(e));
-      });
+      return Boom.wrap(e);
+    }
   }
 });

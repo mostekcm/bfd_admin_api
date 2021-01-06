@@ -165,6 +165,8 @@ export default class CrmService {
               /* Use Refresh Token to get a new access token */
               const redirectUri = config('HUBSPOT_REDIRECT_URI') + `?state=${hubSpotInfo.state}`;
 
+              logger.debug('Carlos, rt, cid, csecret', hubSpotInfo.refresh_token, config('HUBSPOT_CLIENT_ID'), config('HUBSPOT_CLIENT_SECRET'), redirectUri);
+
               return request
                 .post('https://api.hubapi.com/oauth/v1/token')
                 .type('form')
@@ -183,6 +185,10 @@ export default class CrmService {
                     }, response.body)
                   })
                     .then(() => response.body.access_token);
+                })
+                .catch((e) => {
+                  logger.error(e);
+                  throw e;
                 });
             }
 
@@ -193,10 +199,13 @@ export default class CrmService {
 
   getCompanies() {
     return this.getAccessToken()
-      .then(accessToken => request
-        .get('https://api.hubapi.com/companies/v2/companies/paged?limit=250&properties=name')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .then(response => CrmService.mapHubSpotCompaniesToBfd(response.body.companies)));
+      .then((accessToken) => {
+        logger.debug('Carlos, accessToken: ', accessToken);
+        return request
+          .get('https://api.hubapi.com/companies/v2/companies/paged?limit=250&properties=name')
+          .set('Authorization', `Bearer ${accessToken}`)
+          .then(response => CrmService.mapHubSpotCompaniesToBfd(response.body.companies));
+      });
   }
 
   static getContactInfo(accessToken, company) {

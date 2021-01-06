@@ -14,20 +14,21 @@ export default () => ({
     description: 'Get all orders in the system.',
     tags: ['api'],
     validate: {
-      params: {
+      params: Joi.object({
         id: Joi.string().guid().required()
-      }
+      })
     }
   },
-  handler: (req, reply) => {
+  handler: async (req) => {
     const service = new DbOrderService(req.auth.credentials);
     logger.warn('deleting order: ', req.params.id);
-    return service.deleteOrder(req.params.id)
-      .then(() => ({ id: req.params.id }))
-      .catch((e) => {
-        logger.error(e.message);
-        logger.error(e.stackTrace);
-        return reply(Boom.wrap(e));
-      });
+    try {
+      await service.deleteOrder(req.params.id);
+      return { id: req.params.id };
+    } catch (e) {
+      logger.error(e.message);
+      logger.error(e.stackTrace);
+      return Boom.wrap(e);
+    }
   }
 });

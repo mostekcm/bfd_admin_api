@@ -15,45 +15,43 @@ export default () => ({
     description: 'Update the company from hubspot',
     tags: ['api'],
     validate: {
-      params: {
+      params: Joi.object({
         id: Joi.string().guid().required()
-      }
+      })
     }
   },
-  handler: (req, reply) => {
+  handler: async (req) => {
     const crmService = new CrmService(req.auth.credentials);
     const orderService = new OrderService(req.auth.credentials);
 
-    const updateCompanyByName = order => crmService.getCompanyByName(order.store.name)
-      .then((companyFromName) => {
-        if (companyFromName) {
-          return orderService.updateCompany(order.id, companyFromName).then(company => reply(company));
-        }
-        return reply(Boom.notFound(`No Hubspot Company Found for store: ${order.store.name}`));
-      });
+    const updateCompanyByName = async (order) => {
+      const companyFromName = await crmService.getCompanyByName(order.store.name);
+      if (companyFromName) {
+        return orderService.updateCompany(order.id, companyFromName);
+      }
+      return Boom.notFound(`No Hubspot Company Found for store: ${order.store.name}`);
+    };
 
-    orderService.getOrder(req.params.id)
-      .then((order) => {
-        if (order.store.id) {
-          return crmService.getCompany(order.store.id)
-            .then(company => orderService.updateCompany(order.id, company))
-            .then(company => reply(company))
-            .catch((err) => {
-              if (err.message === 'Not Found') {
-                return updateCompanyByName(order);
-              }
-              logger.error('Error updating company: ', err);
-              return Promise.reject(err);
-            });
+    try {
+      const order = await orderService.getOrder(req.params.id);
+      if (order.store.id) {
+        try {
+          const company = await crmService.getCompany(order.store.id);
+          return orderService.updateCompany(order.id, company);
+        } catch (err) {
+          if (err.message === 'Not Found') {
+            return updateCompanyByName(order);
+          }
+          logger.error('Error updating company: ', err);
+          return Boom.wrap(err);
         }
+      }
 
-        return updateCompanyByName(order);
-      })
-      .catch((e) => {
-        logger.error(e.message);
-        logger.error(e.message);
-        logger.error(e.stack);
-        return reply(Boom.wrap(e));
-      });
+      return updateCompanyByName(order);
+    } catch (e) {
+      logger.error(e.message);
+      logger.error(e.stack);
+      return Boom.wrap(e);
+    }
   }
 });

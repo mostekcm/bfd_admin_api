@@ -18,38 +18,38 @@ export default () => ({
     description: 'Get a report on all orders targeted for a month.',
     tags: ['api'],
     validate: {
-      params: {
+      params: Joi.object({
         month: Joi.number().min(0).max(12).required(),
         year: Joi.number().min(2016).max(3000)
-      }
+      })
     }
   },
-  handler: (req, reply) => {
+  handler: async (req) => {
     const labelService = new LabelService();
     const orderService = new DbOrderService(req.auth.credentials);
 
     const year = req.params.year || parseInt(moment().format('YYYY'), 10);
 
-    labelService.getAll()
-      .then((labelUse) => {
-        const getPromise = req.params.month === 0 ? orderService.getNextMonthOrders() : orderService.getMonthOrders(req.params.month, year);
-        return getPromise
-          .then(orders => getOrderNeeds(labelUse, orders))
-          .then(report => reply(_.merge({ month: `${req.params.month}/${year}` }, report)));
-      })
-      .catch((e) => {
-        if (e.message) {
-          logger.error('Error trying to get order data: ', e.message);
-          logger.error(e.stack);
-        } else {
-          logger.error(e);
-        }
+    try {
+      const labelUse = await labelService.getAll();
+      const orders = req.params.month === 0 ?
+        await orderService.getNextMonthOrders() :
+        await orderService.getMonthOrders(req.params.month, year);
+      const report = await getOrderNeeds(labelUse, orders);
+      return _.merge({ month: `${req.params.month}/${year}` }, report);
+    } catch (e) {
+      if (e.message) {
+        logger.error('Error trying to get order data: ', e.message);
+        logger.error(e.stack);
+      } else {
+        logger.error(e);
+      }
 
-        return reply({
-          statusCode: 500,
-          error: 'Internal Configuration Error',
-          message: e.message ? e.message : e
-        });
-      });
+      return {
+        statusCode: 500,
+        error: 'Internal Configuration Error',
+        message: e.message ? e.message : e
+      };
+    }
   }
 });
