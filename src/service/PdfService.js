@@ -63,14 +63,22 @@ export default class PdfService {
         const rawHeight = parseInt(imageHeight / this.scale, 10);
         if (metadata.height > rawHeight) {
           return sharp(imageData)
-            .resize(metadata.width, rawHeight)
-            .crop(sharp.gravity.north)
+            .resize({
+              width: metadata.width,
+              height: rawHeight,
+              fit: 'cover',
+              position: sharp.gravity.north
+            })
             .toBuffer()
             .then((croppedImageData) => {
               this.addImagePage(croppedImageData);
               return sharp(imageData)
-                .resize(metadata.width, metadata.height - rawHeight)
-                .crop(sharp.gravity.south)
+                .resize({
+                  width: metadata.width,
+                  height: metadata.height - rawHeight,
+                  fit: 'cover',
+                  position: sharp.gravity.south
+                })
                 .toBuffer()
                 .then(finalCropped => this.addNextPage(finalCropped));
             });
